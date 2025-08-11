@@ -1,6 +1,6 @@
 # 🏖️ 해수욕장 인구 밀집 CCTV 프로젝트 (가제)
 
-**Spring Boot + Vue.js + OpenCV + YOLO + MySQL** 기반 실시간 해수욕장 인구 밀집 및 이상행동 탐지 시스템 — GitHub용 마크다운(시각화 포함)
+**Spring Boot + Vue.js + OpenCV + YOLO + MySQL** 기반 실시간 해수욕장 인구 밀집 및 이상행동 탐지 시스템
 
 ---
 
@@ -22,8 +22,6 @@
 ---
 
 ## 🏗️ 아키텍처 다이어그램 (Mermaid)
-
-GitHub에서 바로 렌더링 가능한 Mermaid 다이어그램을 포함했습니다.
 
 ```mermaid
 flowchart LR
