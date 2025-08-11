@@ -27,36 +27,38 @@ GitHub에서 바로 렌더링 가능한 Mermaid 다이어그램을 포함했습�
 
 ```mermaid
 flowchart LR
-  subgraph CCTV Layer
-    CCTV1[CCTV camera 1]
-    CCTV2[CCTV camera 2]
-  end
+    subgraph CCTV
+        C1[카메라1]
+        C2[카메라2]
+    end
 
-  subgraph Edge/Stream
-    StreamAgent[영상 수집기 (OpenCV)\nRTSP/HTTP를 받아 프레임 전처리]
-  end
+    subgraph VideoProcessing["영상 분석 서버 (Python)"]
+        StreamAgent["영상 수집기 (OpenCV)\nRTSP/HTTP 처리"]
+        YOLO["객체 탐지 (YOLOv8)"]
+    end
 
-  subgraph Analysis
-    YOLO[YOLO 분석 서비스\n(Python: ultralytics / PyTorch)]
-    Tracker[Tracking & Event Detector\n(OpenCV + Kalman/DeepSORT)]
-  end
+    subgraph Backend["Spring Boot API 서버"]
+        Auth["권한/인증 처리"]
+        EventHandler["이벤트 처리 및 알림 발송"]
+    end
 
-  subgraph Backend
-    SpringAPI[Spring Boot API 서버]\nDB[(MySQL)]
-    NotificationSvc[Notification Service\n(SMS/Email/알림 로직)]
-  end
+    subgraph Database[MySQL]
+        UserDB[("(유저 정보)")]
+        EventDB[("(이벤트 로그)")]
+    end
 
-  subgraph Frontend
-    Vue[Vue.js SPA]\n    Admin[관리자 대시보드]
-  end
+    subgraph Frontend["Vue.js 대시보드"]
+        LiveView["실시간 영상 보기"]
+        Stats["통계 시각화"]
+    end
 
-  CCTV1 --> StreamAgent --> YOLO --> Tracker --> SpringAPI
-  CCTV2 --> StreamAgent
-  Tracker --> SpringAPI
-  SpringAPI --> DB
-  SpringAPI --> NotificationSvc
-  SpringAPI --> Vue
-  NotificationSvc --> SMS[문자] & Email[메일]
+    C1 --> StreamAgent
+    C2 --> StreamAgent
+    StreamAgent --> YOLO
+    YOLO --> Backend
+    Backend --> Database
+    Backend --> Frontend
+    Database --> Frontend
 ```
 
 > 설명: 영상 수집(OpenCV)은 프레임을 자르고 전처리해 YOLO 서비스에 POST. YOLO는 객체(사람) 검출 결과를 반환하고, 트래킹/행동분석 모듈이 이벤트(구역이탈/누움)를 판단해 Spring API로 전송.
