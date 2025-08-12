@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: jejubeach
+  web:
+    resources:
+      static-locations:
+        - classpath:/static/
+        - file:../data/
+server:
+  port: 8080
