@@ -35,11 +35,17 @@
               관리자
             </router-link>
           </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#">
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
               <i class="bi bi-geo-alt me-1"></i>
               담당해변
             </a>
+            <ul class="dropdown-menu">
+              <li><router-link class="dropdown-item" to="/beach-crowd">해변 혼잡도</router-link></li>
+              <li><router-link class="dropdown-item" to="/beach-crowd/hamduck">함덕해변</router-link></li>
+              <li><router-link class="dropdown-item" to="/beach-crowd/iho">이호해변</router-link></li>
+              <li><router-link class="dropdown-item" to="/beach-crowd/walljeonglee">월정리해변</router-link></li>
+            </ul>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="#">

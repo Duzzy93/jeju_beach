@@ -3,6 +3,8 @@ spring:
     name: jejubeach
   web:
     resources:
+      chain:
+        enabled: true
       static-locations:
         - classpath:/static/
         - file:../data/
