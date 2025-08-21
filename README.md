@@ -15,7 +15,7 @@ AI 기술을 활용한 제주 해변 실시간 혼잡도 모니터링 및 AI 챗
 ## 🚀 기술 스택
 
 ### 백엔드
-- **Spring Boot 3.2.0**: Java 17 기반
+- **Spring Boot 3.2.0**: Java 21 기반
 - **WebSocket**: 실시간 통신
 - **OpenAI API**: AI 챗봇 서비스
 - **Gradle**: 빌드 도구
