@@ -25,7 +25,13 @@
                   </span>
                 </div>
                 <div class="mt-2">
-                  <small class="text-muted">인원: {{ hamduckCount }}명</small>
+                  <small class="text-muted">현재: {{ hamduckCount }}명 | 총: {{ hamduckUniqueCount }}명</small>
+                  <div v-if="hamduckFallenCount > 0" class="mt-1">
+                    <small class="text-danger">
+                      <i class="bi bi-exclamation-triangle me-1"></i>
+                      쓰러짐: {{ hamduckFallenCount }}명
+                    </small>
+                  </div>
                 </div>
               </div>
             </div>
@@ -44,7 +50,13 @@
                   </span>
                 </div>
                 <div class="mt-2">
-                  <small class="text-muted">인원: {{ ihoCount }}명</small>
+                  <small class="text-muted">현재: {{ ihoCount }}명 | 총: {{ ihoUniqueCount }}명</small>
+                  <div v-if="ihoFallenCount > 0" class="mt-1">
+                    <small class="text-danger">
+                      <i class="bi bi-exclamation-triangle me-1"></i>
+                      쓰러짐: {{ ihoFallenCount }}명
+                    </small>
+                  </div>
                 </div>
               </div>
             </div>
@@ -63,7 +75,13 @@
                   </span>
                 </div>
                 <div class="mt-2">
-                  <small class="text-muted">인원: {{ walljeongleeCount }}명</small>
+                  <small class="text-muted">현재: {{ walljeongleeCount }}명 | 총: {{ walljeongleeUniqueCount }}명</small>
+                  <div v-if="walljeongleeFallenCount > 0" class="mt-1">
+                    <small class="text-danger">
+                      <i class="bi bi-exclamation-triangle me-1"></i>
+                      쓰러짐: {{ walljeongleeFallenCount }}명
+                    </small>
+                  </div>
                 </div>
               </div>
             </div>
@@ -81,10 +99,16 @@ export default {
     return {
       hamduckDensity: 'low',
       hamduckCount: 0,
+      hamduckUniqueCount: 0,
+      hamduckFallenCount: 0,
       ihoDensity: 'medium',
       ihoCount: 0,
+      ihoUniqueCount: 0,
+      ihoFallenCount: 0,
       walljeongleeDensity: 'high',
       walljeongleeCount: 0,
+      walljeongleeUniqueCount: 0,
+      walljeongleeFallenCount: 0,
       stompClient: null
     }
   },
@@ -114,18 +138,24 @@ export default {
           this.stompClient.subscribe('/topic/beach-crowd/hamduck', (message) => {
             const data = JSON.parse(message.body);
             this.hamduckCount = data.personCount;
+            this.hamduckUniqueCount = data.uniquePersonCount || data.personCount;
+            this.hamduckFallenCount = data.fallenCount || 0;
             this.hamduckDensity = this.getDensityLevel(this.hamduckCount);
           });
           
           this.stompClient.subscribe('/topic/beach-crowd/iho', (message) => {
             const data = JSON.parse(message.body);
             this.ihoCount = data.personCount;
+            this.ihoUniqueCount = data.uniquePersonCount || data.personCount;
+            this.ihoFallenCount = data.fallenCount || 0;
             this.ihoDensity = this.getDensityLevel(this.ihoCount);
           });
           
           this.stompClient.subscribe('/topic/beach-crowd/walljeonglee', (message) => {
             const data = JSON.parse(message.body);
             this.walljeongleeCount = data.personCount;
+            this.walljeongleeUniqueCount = data.uniquePersonCount || data.personCount;
+            this.walljeongleeFallenCount = data.fallenCount || 0;
             this.walljeongleeDensity = this.getDensityLevel(this.walljeongleeCount);
           });
         }, (error) => {
@@ -140,17 +170,23 @@ export default {
       }
     },
     startSimulation() {
-      // 각 해변별로 시뮬레이션 데이터 생성
-      setInterval(() => {
-        this.hamduckCount = Math.floor(Math.random() * 20) + 5;
-        this.hamduckDensity = this.getDensityLevel(this.hamduckCount);
-        
-        this.ihoCount = Math.floor(Math.random() * 20) + 5;
-        this.ihoDensity = this.getDensityLevel(this.ihoCount);
-        
-        this.walljeongleeCount = Math.floor(Math.random() * 20) + 5;
-        this.walljeongleeDensity = this.getDensityLevel(this.walljeongleeCount);
-      }, 5000);
+              // 각 해변별로 시뮬레이션 데이터 생성
+        setInterval(() => {
+          this.hamduckCount = Math.floor(Math.random() * 20) + 5;
+          this.hamduckUniqueCount = this.hamduckCount + Math.floor(Math.random() * 5);
+          this.hamduckFallenCount = Math.floor(Math.random() * 3);
+          this.hamduckDensity = this.getDensityLevel(this.hamduckCount);
+          
+          this.ihoCount = Math.floor(Math.random() * 20) + 5;
+          this.ihoUniqueCount = this.ihoCount + Math.floor(Math.random() * 5);
+          this.ihoFallenCount = Math.floor(Math.random() * 3);
+          this.ihoDensity = this.getDensityLevel(this.ihoCount);
+          
+          this.walljeongleeCount = Math.floor(Math.random() * 20) + 5;
+          this.walljeongleeUniqueCount = this.walljeongleeCount + Math.floor(Math.random() * 5);
+          this.walljeongleeFallenCount = Math.floor(Math.random() * 3);
+          this.walljeongleeDensity = this.getDensityLevel(this.walljeongleeCount);
+        }, 5000);
     },
     getDensityLevel(count) {
       if (count < 5) return 'low';

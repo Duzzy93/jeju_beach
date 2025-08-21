@@ -4,6 +4,22 @@ echo    제주 해변 혼잡도 시스템 실행
 echo ========================================
 echo.
 
+echo 0. Python 의존성 확인 중...
+cd beach_project
+python -c "import ultralytics, deep_sort_realtime, cv2" 2>nul
+if errorlevel 1 (
+    echo Python 의존성이 설치되지 않았습니다.
+    echo requirements.txt를 설치합니다...
+    pip install -r requirements.txt
+    if errorlevel 1 (
+        echo 의존성 설치에 실패했습니다. 수동으로 설치해주세요.
+        echo pip install ultralytics deep-sort-realtime opencv-python pillow numpy
+        pause
+        exit /b 1
+    )
+)
+cd ..
+
 echo 1. 백엔드 실행 중...
 cd backend
 start "Spring Boot Backend" cmd /k "gradlew.bat bootRun"

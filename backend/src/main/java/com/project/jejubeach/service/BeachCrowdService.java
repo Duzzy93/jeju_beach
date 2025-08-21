@@ -37,10 +37,9 @@ public class BeachCrowdService {
         scheduler.scheduleAtFixedRate(() -> {
             try {
                 // Python 스크립트 호출하여 실제 혼잡도 분석 수행
-                String pythonScript = "python3 ../beach_project/beach_crowd_analyzer.py";
                 String videoPath = "../data/" + beachName + "_beach.mp4";
                 
-                ProcessBuilder pb = new ProcessBuilder("python3", 
+                ProcessBuilder pb = new ProcessBuilder("python", 
                     "../beach_project/beach_crowd_analyzer.py", 
                     videoPath, 
                     beachName);
@@ -60,20 +59,15 @@ public class BeachCrowdService {
                                 new com.fasterxml.jackson.databind.ObjectMapper();
                             Map<String, Object> result = mapper.readValue(line, Map.class);
                             
+                            // 추가 정보 설정
+                            result.put("beachName", getBeachDisplayName(beachName));
+                            
                             // WebSocket으로 결과 전송
                             messagingTemplate.convertAndSend("/topic/beach-crowd/" + beachName, result);
                             
                         } catch (Exception e) {
                             // JSON 파싱 실패 시 시뮬레이션 데이터 사용
-                            int personCount = (int) (Math.random() * 20) + 5;
-                            String densityLevel = getDensityLevel(personCount);
-                            
-                            Map<String, Object> fallbackResult = new HashMap<>();
-                            fallbackResult.put("beachName", getBeachDisplayName(beachName));
-                            fallbackResult.put("personCount", personCount);
-                            fallbackResult.put("densityLevel", densityLevel);
-                            fallbackResult.put("timestamp", System.currentTimeMillis());
-                            
+                            Map<String, Object> fallbackResult = createFallbackResult(beachName);
                             messagingTemplate.convertAndSend("/topic/beach-crowd/" + beachName, fallbackResult);
                         }
                     }
@@ -111,6 +105,27 @@ public class BeachCrowdService {
             case "walljeonglee": return "월정리해변";
             default: return beachCode;
         }
+    }
+    
+    private Map<String, Object> createFallbackResult(String beachName) {
+        int personCount = (int) (Math.random() * 20) + 5;
+        String densityLevel = getDensityLevel(personCount);
+        
+        Map<String, Object> fallbackResult = new HashMap<>();
+        fallbackResult.put("beachName", getBeachDisplayName(beachName));
+        fallbackResult.put("personCount", personCount);
+        fallbackResult.put("uniquePersonCount", personCount);
+        fallbackResult.put("fallenCount", 0);
+        fallbackResult.put("densityLevel", densityLevel);
+        fallbackResult.put("timestamp", System.currentTimeMillis());
+        fallbackResult.put("stats", Map.of(
+            "unique_person_count", personCount,
+            "last_visible_count", personCount,
+            "last_fallen_visible", 0,
+            "total_fall_alerts", 0
+        ));
+        
+        return fallbackResult;
     }
     
     @PreDestroy
