@@ -1,9 +1,15 @@
 package com.project.jejubeach.dto;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.time.LocalDateTime;
 
+@Setter
+@Getter
 public class ChatMessage {
-    private String role;
+  // Getters and Setters
+  private String role;
     private String content;
     private LocalDateTime timestamp;
     private String messageId;
@@ -17,36 +23,4 @@ public class ChatMessage {
         this.messageId = java.util.UUID.randomUUID().toString();
     }
 
-    // Getters and Setters
-    public String getRole() {
-        return role;
-    }
-
-    public void setRole(String role) {
-        this.role = role;
-    }
-
-    public String getContent() {
-        return content;
-    }
-
-    public void setContent(String content) {
-        this.content = content;
-    }
-
-    public LocalDateTime getTimestamp() {
-        return timestamp;
-    }
-
-    public void setTimestamp(LocalDateTime timestamp) {
-        this.timestamp = timestamp;
-    }
-
-    public String getMessageId() {
-        return messageId;
-    }
-
-    public void setMessageId(String messageId) {
-        this.messageId = messageId;
-    }
 }

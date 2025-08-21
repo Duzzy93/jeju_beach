@@ -1,15 +1,16 @@
 package com.project.jejubeach.service;
 
-import org.springframework.stereotype.Service;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.stereotype.Service;
+
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.HashMap;
-import java.util.Map;
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
 
 @Service
 public class BeachCrowdService {

@@ -4,7 +4,7 @@ import com.project.jejubeach.dto.ChatMessage;
 import com.project.jejubeach.dto.ChatRequest;
 import com.project.jejubeach.dto.ChatResponse;
 import com.project.jejubeach.service.ChatbotService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,14 +13,10 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/chatbot")
 @CrossOrigin(origins = "http://localhost:5173")
+@RequiredArgsConstructor
 public class ChatbotController {
 
     private final ChatbotService chatbotService;
-
-    @Autowired
-    public ChatbotController(ChatbotService chatbotService) {
-        this.chatbotService = chatbotService;
-    }
 
     @PostMapping("/chat")
     public ResponseEntity<ChatResponse> chat(@RequestBody ChatRequest request) {

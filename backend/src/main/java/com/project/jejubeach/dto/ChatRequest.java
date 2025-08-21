@@ -1,9 +1,15 @@
 package com.project.jejubeach.dto;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.util.List;
 
+@Setter
+@Getter
 public class ChatRequest {
-    private String message;
+  // Getters and Setters
+  private String message;
     private List<ChatMessage> conversationHistory;
 
     public ChatRequest() {}
@@ -13,20 +19,4 @@ public class ChatRequest {
         this.conversationHistory = conversationHistory;
     }
 
-    // Getters and Setters
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
-    public List<ChatMessage> getConversationHistory() {
-        return conversationHistory;
-    }
-
-    public void setConversationHistory(List<ChatMessage> conversationHistory) {
-        this.conversationHistory = conversationHistory;
-    }
 }

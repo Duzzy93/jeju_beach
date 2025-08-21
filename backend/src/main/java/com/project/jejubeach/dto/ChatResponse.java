@@ -1,7 +1,13 @@
 package com.project.jejubeach.dto;
 
+import lombok.Getter;
+import lombok.Setter;
+
+@Setter
+@Getter
 public class ChatResponse {
-    private String message;
+  // Getters and Setters
+  private String message;
     private String messageId;
     private long timestamp;
 
@@ -13,28 +19,4 @@ public class ChatResponse {
         this.timestamp = System.currentTimeMillis();
     }
 
-    // Getters and Setters
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
-    public String getMessageId() {
-        return messageId;
-    }
-
-    public void setMessageId(String messageId) {
-        this.messageId = messageId;
-    }
-
-    public long getTimestamp() {
-        return timestamp;
-    }
-
-    public void setTimestamp(long timestamp) {
-        this.timestamp = timestamp;
-    }
 }
