@@ -209,6 +209,12 @@ def main():
     
     display_name = beach_names.get(beach_name, beach_name)
     
+    # 동영상 파일 존재 여부 확인
+    if not os.path.exists(video_path):
+        print(f"Error: Video file not found: {video_path}")
+        print("Please check the video path. Expected location: backend/src/main/resources/static/videos/")
+        sys.exit(1)
+    
     # 분석기 생성 및 실행
     analyzer = BeachCrowdAnalyzer(video_path, display_name)
     result = analyzer.process_video()

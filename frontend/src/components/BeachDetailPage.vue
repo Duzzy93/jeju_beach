@@ -195,7 +195,7 @@ export default {
           this.beachLocation = '제주특별자치도 제주시 구좌읍';
           this.beachFeatures = '맑은 물, 깨끗한 모래사장, 아름다운 경관';
           this.bestTime = '오전 9시 ~ 오후 3시';
-          this.videoSource = 'http://localhost:8080/hamduck_beach.mp4';
+          this.videoSource = 'http://localhost:8080/videos/hamduck_beach.mp4';
           break;
         case 'iho':
           this.beachDisplayName = '이호해변';
@@ -203,7 +203,7 @@ export default {
           this.beachLocation = '제주특별자치도 제주시 이호동';
           this.beachFeatures = '평화로운 분위기, 일몰 감상, 조용한 환경';
           this.bestTime = '오후 4시 ~ 저녁 8시';
-          this.videoSource = 'http://localhost:8080/iho_beach.mp4';
+          this.videoSource = 'http://localhost:8080/videos/iho_beach.mp4';
           break;
         case 'walljeonglee':
           this.beachDisplayName = '월정리해변';
@@ -211,7 +211,7 @@ export default {
           this.beachLocation = '제주특별자치도 제주시 구좌읍';
           this.beachFeatures = '투명한 물, 해양생물, 스노클링';
           this.bestTime = '오전 10시 ~ 오후 4시';
-          this.videoSource = 'http://localhost:8080/walljeonglee_beach.mp4';
+          this.videoSource = 'http://localhost:8080/videos/walljeonglee_beach.mp4';
           break;
       }
     },

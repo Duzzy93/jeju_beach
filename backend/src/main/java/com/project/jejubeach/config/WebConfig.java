@@ -16,6 +16,11 @@ public class WebConfig implements WebMvcConfigurer {
     registry
             .addResourceHandler("/videos/**")
             .addResourceLocations("classpath:/static/videos/");
+    
+    // 동영상 파일 직접 접근 허용
+    registry
+            .addResourceHandler("/*.mp4")
+            .addResourceLocations("classpath:/static/videos/");
   }
 
   @Bean

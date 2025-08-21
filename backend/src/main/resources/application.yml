@@ -1,12 +1,22 @@
-spring:
-  application:
-    name: jejubeach
-  web:
-    resources:
-      chain:
-        enabled: true
-      static-locations:
-        - classpath:/static/
-        - file:../data/
 server:
   port: 8080
+
+spring:
+  application:
+    name: jeju-beach-backend
+  profiles:
+    active: dev
+
+# OpenAI API 설정
+openai:
+  api:
+    url: https://api.openai.com/v1/chat/completions
+
+# 로깅 설정
+logging:
+  level:
+    com.project.jejubeach: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.web.client: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

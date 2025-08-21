@@ -20,21 +20,21 @@ public class BeachVideoController {
                     "hamduck_beach.mp4",
                     "함덕 해수욕장",
                     "제주도 대표적인 해변 중 하나인 함덕 해수욕장입니다.",
-                    "/hamduck_beach.mp4"
+                    "/videos/hamduck_beach.mp4"
             ),
             new BeachVideo(
                     "iho",
                     "iho_beach.mp4",
                     "이호 해수욕장",
                     "이호 해수욕장은 공항 근처에 위치해 있어 접근성이 좋습니다.",
-                    "/iho_beach.mp4"
+                    "/videos/iho_beach.mp4"
             ),
             new BeachVideo(
                     "walljeonglee",
                     "walljeonglee_beach.mp4",
                     "월정리 해수욕장",
                     "월정리 해수욕장은 맑은 바다와 카페 거리로 유명합니다.",
-                    "/walljeonglee_beach.mp4"
+                    "/videos/walljeonglee_beach.mp4"
             )
     );
   }

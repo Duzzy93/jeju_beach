@@ -69,9 +69,22 @@
                 @play="onVideoPlay(video.id)"
                 @pause="onVideoPause(video.id)"
                 @volumechange="onVolumeChange(video.id)"
+                @loadstart="onVideoLoadStart(video.id)"
+                @loadeddata="onVideoLoadedData(video.id)"
+                @error="onVideoError(video.id, $event)"
+                @canplay="onVideoCanPlay(video.id)"
               >
                 동영상을 지원하지 않는 브라우저입니다.
               </video>
+              
+              <!-- 동영상 로드 실패 시 대체 표시 -->
+              <div v-if="videoLoadError[video.id]" class="video-fallback d-flex align-items-center justify-content-center h-100">
+                <div class="text-center text-muted">
+                  <i class="bi bi-exclamation-triangle display-4"></i>
+                  <p class="mt-2 mb-0">동영상 로드 실패</p>
+                  <small>{{ videoLoadError[video.id] }}</small>
+                </div>
+              </div>
               
               <!-- 동영상 오버레이 정보 -->
               <div class="video-overlay">
@@ -83,6 +96,17 @@
                   <span class="badge bg-info">
                     <i class="bi bi-clock me-1"></i>
                     {{ getCurrentTime() }}
+                  </span>
+                </div>
+                <!-- 동영상 상태 표시 -->
+                <div class="video-status mt-2">
+                  <span v-if="!isPlaying(video.id)" class="badge bg-warning">
+                    <i class="bi bi-pause-circle me-1"></i>
+                    일시정지
+                  </span>
+                  <span v-else class="badge bg-success">
+                    <i class="bi bi-play-circle me-1"></i>
+                    재생중
                   </span>
                 </div>
               </div>
@@ -160,7 +184,8 @@ export default {
       videos: [],
       playingVideos: new Set(),
       mutedVideos: new Set(),
-      currentTime: new Date()
+      currentTime: new Date(),
+      videoLoadError: {}
     }
   },
   mounted() {
@@ -175,27 +200,30 @@ export default {
       try {
         const response = await fetch('http://localhost:8080/api/videos')
         const data = await response.json()
+        console.log('API 응답:', data)
         this.videos = data
+        this.videoLoadError = {} // 비디오 로드 실패 상태 초기화
       } catch (error) {
         console.error('동영상 로드 실패:', error)
-        // 테스트용 더미 데이터
+        this.videoLoadError = {} // 비디오 로드 실패 상태 초기화
+        // 테스트용 더미 데이터 - API 응답과 ID 일치
         this.videos = [
           {
-            id: 1,
+            id: 'hamduck',
             title: '함덕 해변',
-            videoUrl: '/data/hamduck_beach.mp4',
+            videoUrl: 'http://localhost:8080/videos/hamduck_beach.mp4',
             description: '함덕 해변 CCTV'
           },
           {
-            id: 2,
+            id: 'iho',
             title: '이호 해변',
-            videoUrl: '/data/iho_beach.mp4',
+            videoUrl: 'http://localhost:8080/videos/iho_beach.mp4',
             description: '이호 해변 CCTV'
           },
           {
-            id: 3,
+            id: 'walljeonglee',
             title: '월정리 해변',
-            videoUrl: '/data/walljeonglee_beach.mp4',
+            videoUrl: 'http://localhost:8080/videos/walljeonglee_beach.mp4',
             description: '월정리 해변 CCTV'
           }
         ]
@@ -268,6 +296,28 @@ export default {
       } else {
         document.exitFullscreen()
       }
+    },
+    onVideoLoadStart(videoId) {
+      console.log(`Video ${videoId} load started.`)
+    },
+    onVideoLoadedData(videoId) {
+      console.log(`Video ${videoId} loaded data.`)
+    },
+    onVideoError(videoId, event) {
+      console.error(`Video ${videoId} error:`, event)
+      this.videoLoadError[videoId] = `동영상을 불러올 수 없습니다. (${event.message})`
+    },
+    onVideoCanPlay(videoId) {
+      console.log(`Video ${videoId} can play.`)
+      // 동영상이 재생 가능한 상태가 되면 자동 재생
+      this.$nextTick(() => {
+        const video = this.$refs[`video-${videoId}`]?.[0]
+        if (video && !this.isPlaying(videoId)) {
+          video.play().catch(error => {
+            console.warn(`Auto-play failed for ${videoId}:`, error)
+          })
+        }
+      })
     }
   }
 }
@@ -279,14 +329,19 @@ export default {
   background-color: #f8f9fa;
 }
 
+.page-header {
+  border-bottom: 1px solid #dee2e6;
+}
+
 .cctv-card {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  border: 2px solid #dee2e6;
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .cctv-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
 .cctv-video {
@@ -306,39 +361,51 @@ export default {
 .overlay-info {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
+}
+
+.video-status {
+  display: flex;
+  justify-content: center;
+}
+
+.video-fallback {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #f8f9fa;
+  border: 2px dashed #dee2e6;
+}
+
+.cctv-controls {
+  display: flex;
+  gap: 4px;
 }
 
 .cctv-controls .btn {
-  padding: 0.25rem 0.5rem;
+  padding: 4px 8px;
   font-size: 0.875rem;
 }
 
-.page-header {
-  border-bottom: 1px solid #dee2e6;
+/* 동영상 로딩 상태 표시 */
+.video-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 5;
 }
 
-.card-header {
-  border-bottom: none;
-}
-
-.card-footer {
-  background-color: #f8f9fa;
-  border-top: 1px solid #dee2e6;
-}
-
-.badge {
-  font-size: 0.75rem;
-}
-
-/* 반응형 디자인 */
-@media (max-width: 768px) {
-  .cctv-video {
-    height: 150px;
-  }
-  
-  .page-header .btn {
-    font-size: 0.875rem;
-    padding: 0.375rem 0.75rem;
-  }
+/* 동영상 오류 상태 표시 */
+.video-error {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+  text-align: center;
+  color: #dc3545;
 }
 </style>

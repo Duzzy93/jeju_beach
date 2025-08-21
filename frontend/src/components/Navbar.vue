@@ -1,57 +1,27 @@
 <template>
   <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <div class="container">
-      <!-- 홈페이지 로고 -->
       <router-link class="navbar-brand" to="/">
-        <i class="bi bi-water me-2"></i>
-        제주 해변
+        🏖️ 제주 해변 AI 가이드
       </router-link>
-
-      <!-- 모바일 토글 버튼 -->
-      <button 
-        class="navbar-toggler" 
-        type="button" 
-        data-bs-toggle="collapse" 
-        data-bs-target="#navbarNav"
-        aria-controls="navbarNav" 
-        aria-expanded="false" 
-        aria-label="Toggle navigation"
-      >
+      
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
         <span class="navbar-toggler-icon"></span>
       </button>
-
-      <!-- 내비게이션 메뉴 -->
+      
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav me-auto">
           <li class="nav-item">
-            <router-link class="nav-link" to="/">
-              <i class="bi bi-house me-1"></i>
-              홈
-            </router-link>
+            <router-link class="nav-link" to="/">홈</router-link>
           </li>
           <li class="nav-item">
-            <router-link class="nav-link" to="/admin">
-              <i class="bi bi-person-gear me-1"></i>
-              관리자
-            </router-link>
-          </li>
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-              <i class="bi bi-geo-alt me-1"></i>
-              담당해변
-            </a>
-            <ul class="dropdown-menu">
-              <li><router-link class="dropdown-item" to="/beach-crowd">해변 혼잡도</router-link></li>
-              <li><router-link class="dropdown-item" to="/beach-crowd/hamduck">함덕해변</router-link></li>
-              <li><router-link class="dropdown-item" to="/beach-crowd/iho">이호해변</router-link></li>
-              <li><router-link class="dropdown-item" to="/beach-crowd/walljeonglee">월정리해변</router-link></li>
-            </ul>
+            <router-link class="nav-link" to="/beach-crowd">해변 혼잡도</router-link>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="#">
-              <i class="bi bi-robot me-1"></i>
-              챗봇
-            </a>
+            <router-link class="nav-link" to="/chatbot">AI 챗봇</router-link>
+          </li>
+          <li class="nav-item">
+            <router-link class="nav-link" to="/admin">관리자</router-link>
           </li>
         </ul>
 
@@ -77,27 +47,18 @@ export default {
 .navbar-brand {
   font-weight: bold;
   font-size: 1.5rem;
-  text-decoration: none;
 }
 
-.navbar-nav .nav-link {
+.nav-link {
   font-weight: 500;
   transition: color 0.3s ease;
-  text-decoration: none;
 }
 
-.navbar-nav .nav-link:hover {
-  color: #ffc107 !important;
+.nav-link:hover {
+  color: #ffd700 !important;
 }
 
-.navbar-nav .nav-link.router-link-active {
-  color: #ffc107 !important;
-  font-weight: 600;
-}
-
-.btn-outline-light:hover {
-  background-color: #ffc107;
-  border-color: #ffc107;
-  color: #000;
+.navbar-nav .nav-link.active {
+  color: #ffd700 !important;
 }
 </style>

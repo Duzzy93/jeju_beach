@@ -19,9 +19,7 @@ export default defineConfig({
     proxy: {
       '/api': 'http://localhost:8080',
       '/proxy': 'http://localhost:8080',
-      '/hamduck_beach.mp4': 'http://localhost:8080',
-      '/iho_beach.mp4': 'http://localhost:8080',
-      '/walljeonglee_beach.mp4': 'http://localhost:8080',
+      '/videos': 'http://localhost:8080',
     }
   },
 })
