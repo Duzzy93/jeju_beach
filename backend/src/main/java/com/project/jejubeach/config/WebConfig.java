@@ -12,15 +12,15 @@ public class WebConfig implements WebMvcConfigurer {
 
   @Override
   public void addResourceHandlers(ResourceHandlerRegistry registry) {
-    // /videos/** URL 경로를 classpath:/static/videos/ 폴더에 매핑
+    // /videos/** URL 경로를 backend/videos/ 폴더에 매핑
     registry
             .addResourceHandler("/videos/**")
-            .addResourceLocations("classpath:/static/videos/");
+            .addResourceLocations("file:./videos/");
     
     // 동영상 파일 직접 접근 허용
     registry
             .addResourceHandler("/*.mp4")
-            .addResourceLocations("classpath:/static/videos/");
+            .addResourceLocations("file:./videos/");
   }
 
   @Bean

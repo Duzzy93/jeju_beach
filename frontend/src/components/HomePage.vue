@@ -5,13 +5,53 @@
       <div class="container text-center">
         <h1 class="display-3 fw-bold mb-4">🏖️ 제주 해변 AI 가이드</h1>
         <p class="lead mb-4">AI 기술로 분석하는 제주 해변의 실시간 혼잡도와 맞춤형 정보</p>
+        
+        <!-- 로그인 상태에 따른 환영 메시지 -->
+        <div v-if="isLoggedIn" class="welcome-message mb-4">
+          <div class="alert alert-success d-inline-block">
+            <i class="bi bi-person-check me-2"></i>
+            안녕하세요, <strong>{{ username }}</strong>님! 
+            <span class="badge bg-primary ms-2">{{ getRoleDisplayName() }}</span>
+          </div>
+        </div>
+        
         <div class="hero-buttons">
-          <router-link to="/beach-crowd" class="btn btn-primary btn-lg me-3">
-            🏊 해변 혼잡도 보기
-          </router-link>
-          <router-link to="/chatbot" class="btn btn-outline-light btn-lg">
-            🤖 AI 챗봇과 대화하기
-          </router-link>
+          <!-- 관리자: 해변 관리, 관리자 버튼만 표시 -->
+          <template v-if="isLoggedIn && isAdmin">
+            <router-link to="/beach-management" class="btn btn-warning btn-lg me-3">
+              🏖️ 해변 관리
+            </router-link>
+            <router-link to="/admin" class="btn btn-danger btn-lg me-3">
+              ⚙️ 관리자
+            </router-link>
+            <router-link to="/chatbot" class="btn btn-outline-light btn-lg">
+              🤖 AI 챗봇과 대화하기
+            </router-link>
+          </template>
+          
+          <!-- 매니저: 해변 혼잡도만 표시 -->
+          <template v-else-if="isLoggedIn && isManager && !isAdmin">
+            <router-link to="/beach-crowd" class="btn btn-primary btn-lg me-3">
+              🏊 해변 혼잡도 보기
+            </router-link>
+            <router-link to="/chatbot" class="btn btn-outline-light btn-lg">
+              🤖 AI 챗봇과 대화하기
+            </router-link>
+          </template>
+          
+          <!-- 일반 사용자: AI 챗봇 표시 -->
+          <template v-else-if="isLoggedIn && !isManager && !isAdmin">
+            <router-link to="/chatbot" class="btn btn-outline-light btn-lg">
+              🤖 AI 챗봇과 대화하기
+            </router-link>
+          </template>
+          
+          <!-- 비로그인 사용자: 기본 버튼 -->
+          <template v-else>
+            <router-link to="/chatbot" class="btn btn-outline-light btn-lg">
+              🤖 AI 챗봇과 대화하기
+            </router-link>
+          </template>
         </div>
       </div>
     </section>
@@ -49,6 +89,29 @@
             </div>
           </div>
         </div>
+        
+        <!-- 로그인 상태에 따른 추가 기능 -->
+        <div v-if="isLoggedIn" class="row g-4 mt-4">
+          <div class="col-md-6">
+            <div class="feature-card text-center border-success">
+              <div class="feature-icon mb-3">
+                <i class="bi bi-shield-check display-1 text-success"></i>
+              </div>
+              <h4>개인화된 서비스</h4>
+              <p>로그인한 사용자만 이용할 수 있는 개인화된 해변 정보와 추천 서비스를 제공합니다.</p>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="feature-card text-center border-warning">
+              <div class="feature-icon mb-3">
+                <i class="bi bi-gear display-1 text-warning"></i>
+              </div>
+              <h4>관리 기능</h4>
+              <p v-if="isManager">해변 정보 관리 및 업데이트가 가능합니다.</p>
+              <p v-if="isAdmin">전체 시스템 관리 및 사용자 권한 관리가 가능합니다.</p>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -63,9 +126,11 @@
               <div class="beach-content">
                 <h4>함덕해변</h4>
                 <p>제주도 동부의 대표적인 해변으로, 맑은 바다와 백사장이 아름다운 해변입니다.</p>
-                <router-link to="/beach-crowd/hamduck" class="btn btn-outline-primary">
-                  자세히 보기
-                </router-link>
+                <template v-if="isLoggedIn && isManager && !isAdmin">
+                  <router-link to="/beach-crowd/hamduck" class="btn btn-outline-primary">
+                    자세히 보기
+                  </router-link>
+                </template>
               </div>
             </div>
           </div>
@@ -75,9 +140,11 @@
               <div class="beach-content">
                 <h4>이호해변</h4>
                 <p>공항 근처에 위치해 있어 접근성이 좋고, 평화로운 분위기의 해변입니다.</p>
+                <template v-if="isLoggedIn && isManager && !isAdmin">
                 <router-link to="/beach-crowd/iho" class="btn btn-outline-primary">
                   자세히 보기
                 </router-link>
+                </template>
               </div>
             </div>
           </div>
@@ -87,9 +154,11 @@
               <div class="beach-content">
                 <h4>월정리해변</h4>
                 <p>맑은 바다와 카페 거리로 유명하며, 다양한 편의시설을 갖춘 해변입니다.</p>
+                <template v-if="isLoggedIn && isManager && !isAdmin">
                 <router-link to="/beach-crowd/walljeonglee" class="btn btn-outline-primary">
                   자세히 보기
                 </router-link>
+                </template>
               </div>
             </div>
           </div>
@@ -148,28 +217,32 @@
         </div>
       </div>
     </section>
-
-    <!-- CTA 섹션 -->
-    <section class="cta-section py-5 bg-primary text-white">
-      <div class="container text-center">
-        <h2 class="mb-4">지금 바로 제주 해변 AI 가이드를 시작해보세요!</h2>
-        <p class="lead mb-4">AI 기술로 더욱 스마트해진 제주 해변 여행을 경험하세요.</p>
-        <div class="cta-buttons">
-          <router-link to="/beach-crowd" class="btn btn-light btn-lg me-3">
-            🏊 해변 혼잡도 확인하기
-          </router-link>
-          <router-link to="/chatbot" class="btn btn-outline-light btn-lg">
-            🤖 AI 챗봇 시작하기
-          </router-link>
-        </div>
-      </div>
-    </section>
   </div>
 </template>
 
 <script>
+import { useAuthStore } from '../stores/auth'
+import { mapState } from 'pinia'
+
 export default {
-  name: 'HomePage'
+  name: 'HomePage',
+  computed: {
+    ...mapState(useAuthStore, ['isLoggedIn', 'username', 'role', 'isAdmin', 'isManager'])
+  },
+  methods: {
+    getRoleDisplayName() {
+      switch (this.role) {
+        case 'ADMIN':
+          return '관리자';
+        case 'MANAGER':
+          return '매니저';
+        case 'USER':
+          return '사용자';
+        default:
+          return '사용자';
+      }
+    }
+  }
 }
 </script>
 

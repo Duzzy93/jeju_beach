@@ -199,6 +199,9 @@ export default {
     async loadVideos() {
       try {
         const response = await fetch('http://localhost:8080/api/videos')
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
         const data = await response.json()
         console.log('API 응답:', data)
         this.videos = data
@@ -305,7 +308,33 @@ export default {
     },
     onVideoError(videoId, event) {
       console.error(`Video ${videoId} error:`, event)
-      this.videoLoadError[videoId] = `동영상을 불러올 수 없습니다. (${event.message})`
+      
+      // 에러 메시지 처리
+      let errorMessage = '동영상을 불러올 수 없습니다.'
+      
+      if (event.target && event.target.error) {
+        const error = event.target.error
+        switch (error.code) {
+          case MediaError.MEDIA_ERR_ABORTED:
+            errorMessage = '동영상 로드가 중단되었습니다.'
+            break
+          case MediaError.MEDIA_ERR_NETWORK:
+            errorMessage = '네트워크 오류로 동영상을 불러올 수 없습니다.'
+            break
+          case MediaError.MEDIA_ERR_DECODE:
+            errorMessage = '동영상 형식을 지원하지 않습니다.'
+            break
+          case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
+            errorMessage = '지원하지 않는 동영상 소스입니다.'
+            break
+          default:
+            errorMessage = '동영상 로드 중 오류가 발생했습니다.'
+        }
+      } else if (event.message) {
+        errorMessage = `동영상 로드 실패: ${event.message}`
+      }
+      
+      this.videoLoadError[videoId] = errorMessage
     },
     onVideoCanPlay(videoId) {
       console.log(`Video ${videoId} can play.`)

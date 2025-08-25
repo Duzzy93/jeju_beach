@@ -8,7 +8,7 @@
             제주 해변
           </h5>
           <p class="text-white-50">
-            아름다운 제주의 해변을 소개하는 플랫폼입니다.
+            해변 혼잡도와 긴급 상황을 탐지하는 플랫폼입니다.
           </p>
         </div>
         <div class="col-md-4">
@@ -35,7 +35,7 @@
       <div class="row align-items-center">
         <div class="col-md-6">
           <p class="text-white-50 mb-0">
-            &copy; 2024 제주 해변. 모든 권리 보유.
+            &copy; 2025 제주 해변. 모든 권리 보유.
           </p>
         </div>
         <div class="col-md-6 text-md-end">

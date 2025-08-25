@@ -1,82 +1,78 @@
-# 제주 해변 AI 가이드 시스템
+# 제주 해변 프로젝트 (Jeju Beach Project)
 
-AI 기술을 활용한 제주 해변 실시간 혼잡도 모니터링 및 AI 챗봇 가이드 시스템입니다.
+제주도의 해변을 관리하고 CCTV를 통한 혼잡도 분석 및 안전 모니터링을 제공하는 웹 애플리케이션입니다.
 
-## 🏖️ 주요 기능
+## 🚀 주요 기능
 
-- **실시간 해변 혼잡도 분석**: YOLO + DeepSORT를 사용한 정확한 사람 수 탐지
-- **AI 챗봇 가이드**: OpenAI GPT 기반 제주 해변 전문 가이드
-- **중복 카운트 방지**: DeepSORT 추적으로 고유 방문자 수 계산
-- **쓰러짐 감지**: AI 기반 이상 상황 자동 감지 및 알림
-- **WebSocket 실시간 통신**: 실시간 데이터 업데이트
-- **3개 해변 모니터링**: 함덕해변, 이호해변, 월정리해변
-- **반응형 웹 인터페이스**: Vue.js와 Bootstrap을 활용한 모던한 UI
+### 🔐 사용자 인증
+- 회원가입 및 로그인
+- JWT 기반 인증
+- 역할 기반 권한 관리 (ADMIN, MANAGER, USER)
 
-## 🚀 기술 스택
+### 🏖️ 해변 관리
+- 해변 정보 CRUD (생성, 조회, 수정, 삭제)
+- 지역별 해변 검색
+- 해변 상태 관리 (활성/비활성)
 
-### 백엔드
-- **Spring Boot 3.4.8**: Java 21 기반
-- **WebSocket**: 실시간 통신
-- **OpenAI API**: AI 챗봇 서비스
-- **Gradle**: 빌드 도구
+### 📹 CCTV 모니터링
+- 실시간 CCTV 스트리밍
+- YOLO 기반 객체 탐지
+- 혼잡도 분석 및 시각화
 
-### 프론트엔드
-- **Vue.js 3**: 프론트엔드 프레임워크
-- **Bootstrap 5**: UI 컴포넌트
-- **SockJS + STOMP**: WebSocket 클라이언트
+### 🤖 AI 챗봇
+- OpenAI 기반 챗봇 서비스
+- 해변 정보 및 안전 관련 문의 응답
+
+## 🛠️ 기술 스택
+
+### Backend
+- **Spring Boot 3.4.8** - Java 21
+- **Spring Security** - 인증 및 권한 관리
+- **Spring Data JPA** - 데이터 접근 계층
+- **MySQL 8.0** - 데이터베이스
+- **JWT** - 토큰 기반 인증
+- **Gradle** - 빌드 도구
+
+### Frontend
+- **Vue.js 3** - 프론트엔드 프레임워크
+- **Vue Router** - 라우팅
+- **Vite** - 빌드 도구
 
 ### AI/ML
-- **YOLOv8**: 객체 탐지 모델
-- **DeepSORT**: 실시간 객체 추적
-- **OpenCV**: 이미지 처리
-- **OpenAI GPT-3.5**: 자연어 처리 및 챗봇
+- **YOLOv8** - 객체 탐지
+- **DeepSORT** - 객체 추적
+- **OpenAI API** - 챗봇 서비스
 
-## 📁 프로젝트 구조
+## 📋 시스템 요구사항
 
-```
-jeju_beach/
-├── backend/                 # Spring Boot 백엔드
-│   ├── src/main/java/
-│   │   ├── config/         # WebSocket 설정
-│   │   ├── controller/     # 컨트롤러 (BeachVideo, Chatbot)
-│   │   ├── service/        # 비즈니스 로직
-│   │   └── dto/           # 데이터 전송 객체
-│   ├── src/main/resources/
-│   │   ├── static/videos/  # 해변 동영상 데이터
-│   │   └── application.yml # 설정 파일
-│   └── build.gradle
-├── frontend/               # Vue.js 프론트엔드
-│   ├── src/components/     # Vue 컴포넌트
-│   │   ├── HomePage.vue           # 메인 홈페이지
-│   │   ├── BeachCrowdPage.vue     # 해변 혼잡도 메인
-│   │   ├── BeachDetailPage.vue    # 개별 해변 상세
-│   │   ├── ChatbotPage.vue        # AI 챗봇 페이지
-│   │   ├── AdminPage.vue          # 관리자 페이지
-│   │   └── Navbar.vue             # 네비게이션 바
-│   └── package.json
-├── beach_project/          # AI 분석 프로젝트
-│   ├── beach_crowd_analyzer.py           # 혼잡도 분석 스크립트
-│   ├── beach_cv_yolo_deepsort_refactored.ipynb  # Jupyter 노트북
-│   └── yolov8n.pt                          # YOLO 모델
-└── run_project.bat         # 통합 실행 스크립트
-```
+- **Java**: 21 이상
+- **MySQL**: 8.0 이상
+- **Node.js**: 18 이상
+- **Python**: 3.8 이상 (AI 모델용)
 
-## 🛠️ 설치 및 실행
+## 🚀 설치 및 실행
 
-### 1. 환경 설정
+### 1. 데이터베이스 설정
 
-**Backend 환경 변수 설정:**
-`backend/` 폴더에 `.env` 파일을 생성하고 OpenAI API 키를 설정하세요:
+MySQL에 root 사용자로 접속하여 다음 명령을 실행:
 
-```bash
-OPENAI_API_KEY=sk-your_actual_openai_api_key_here
+```sql
+-- 데이터베이스 생성
+CREATE DATABASE jeju_beach_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- 초기화 스크립트 실행
+source database_init.sql;
 ```
 
 ### 2. 백엔드 실행
 
 ```bash
+# Windows
+run_backend.bat
+
+# 또는 수동 실행
 cd backend
-gradlew.bat bootRun
+./gradlew bootRun
 ```
 
 백엔드는 `http://localhost:8080`에서 실행됩니다.
@@ -91,47 +87,92 @@ npm run dev
 
 프론트엔드는 `http://localhost:5173`에서 실행됩니다.
 
-### 4. 통합 실행 (권장)
+## 🔧 설정
 
-프로젝트 루트에서 `run_project.bat`을 실행하면 백엔드와 프론트엔드를 자동으로 시작합니다.
+### 백엔드 설정 (`backend/src/main/resources/application.yml`)
 
-## 🎯 사용 방법
+```yaml
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/jeju_beach_db
+    username: root
+    password: [your_password]
+```
 
-1. **메인 페이지**: `/` - 전체 시스템 개요 및 AI 챗봇 소개
-2. **해변 혼잡도**: `/beach-crowd` - 3개 해변의 혼잡도 요약
-3. **AI 챗봇**: `/chatbot` - 제주 해변 전문 AI 가이드와 대화
-4. **개별 해변**: `/beach-crowd/{beachName}` - 특정 해변의 상세 정보
-5. **관리자**: `/admin` - 시스템 관리
+### JWT 설정
 
-### AI 챗봇 기능
+```yaml
+jwt:
+  secret: [your_jwt_secret_key]
+  expiration: 86400000  # 24시간
+```
 
-- **자연어 대화**: 제주 해변에 대한 모든 질문에 답변
-- **빠른 질문**: 미리 정의된 질문으로 즉시 답변
-- **맞춤형 추천**: 개인 취향에 따른 해변 추천
-- **실시간 혼잡도 정보**: 현재 해변 상황 정보 제공
+## 📊 API 엔드포인트
 
-## 🔧 API 엔드포인트
+### 인증
+- `POST /api/auth/register` - 회원가입
+- `POST /api/auth/login` - 로그인
 
-### 챗봇 API
+### 해변 관리
+- `GET /api/beaches` - 모든 해변 조회
+- `GET /api/beaches/active` - 활성 해변만 조회
+- `GET /api/beaches/{id}` - 특정 해변 조회
+- `POST /api/beaches` - 해변 생성
+- `PUT /api/beaches/{id}` - 해변 수정
+- `DELETE /api/beaches/{id}` - 해변 삭제
+- `PATCH /api/beaches/{id}/toggle-status` - 해변 상태 변경
+
+### 챗봇
 - `POST /api/chatbot/chat` - 챗봇 대화
-- `GET /api/chatbot/quick-questions` - 빠른 질문 목록
-- `GET /api/chatbot/status` - API 키 상태 확인
-- `POST /api/chatbot/test` - 연결 테스트
 
-### 해변 API
-- `GET /api/videos` - 해변 동영상 목록
+## 👥 기본 계정
 
-## 🚨 문제 해결
+- **관리자**: `admin` / `admin123`
+- **이메일**: `admin@jejubeach.com`
 
-### OpenAI API 오류 (401 Unauthorized)
-1. `backend/.env` 파일에 올바른 API 키 설정
-2. Backend 재시작
-3. `http://localhost:8080/api/chatbot/status`로 상태 확인
+## 📁 프로젝트 구조
 
-### 의존성 문제
-- Backend: `gradlew.bat build`로 빌드 확인
-- Frontend: `npm install`로 의존성 재설치
+```
+jeju_beach/
+├── backend/                 # Spring Boot 백엔드
+│   ├── src/main/java/
+│   │   └── com/project/jejubeach/
+│   │       ├── config/      # 설정 클래스
+│   │       ├── controller/  # REST API 컨트롤러
+│   │       ├── dto/         # 데이터 전송 객체
+│   │       ├── entity/      # JPA 엔티티
+│   │       ├── repository/  # 데이터 접근 계층
+│   │       └── service/     # 비즈니스 로직
+│   └── src/main/resources/
+│       └── application.yml  # 설정 파일
+├── frontend/                # Vue.js 프론트엔드
+│   ├── src/
+│   │   ├── components/      # Vue 컴포넌트
+│   │   └── router/          # 라우팅 설정
+│   └── package.json
+├── database_init.sql        # 데이터베이스 초기화 스크립트
+└── README.md               # 프로젝트 문서
+```
 
-## 📝 라이선스
+## 🔒 보안
 
-이 프로젝트는 교육 및 연구 목적으로 제작되었습니다.
+- Spring Security를 통한 인증 및 권한 관리
+- JWT 토큰 기반 세션 관리
+- BCrypt를 통한 비밀번호 암호화
+- CORS 설정으로 프론트엔드와의 안전한 통신
+
+## 🤝 기여하기
+
+1. 이 저장소를 포크합니다
+2. 기능 브랜치를 생성합니다 (`git checkout -b feature/AmazingFeature`)
+3. 변경사항을 커밋합니다 (`git commit -m 'Add some AmazingFeature'`)
+4. 브랜치에 푸시합니다 (`git push origin feature/AmazingFeature`)
+5. Pull Request를 생성합니다
+
+## 📄 라이선스
+
+이 프로젝트는 MIT 라이선스 하에 배포됩니다.
+
+## 📞 문의
+
+프로젝트에 대한 문의사항이 있으시면 이슈를 생성해 주세요.

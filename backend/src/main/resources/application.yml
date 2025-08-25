@@ -6,11 +6,35 @@ spring:
     name: jeju-beach-backend
   profiles:
     active: dev
+  datasource:
+    url: jdbc:mysql://localhost:3306/jeju_beach_db?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8
+    username: root
+    password: 12345
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
+  web:
+    resources:
+      static-locations: classpath:/static/,file:./videos/
+      add-mappings: true
+  mvc:
+    static-path-pattern: /videos/**
 
 # OpenAI API 설정
 openai:
   api:
     url: https://api.openai.com/v1/chat/completions
+
+# JWT 설정
+jwt:
+  secret: jejuBeachSecretKey2024ForJWTTokenGeneration
+  expiration: 86400000 # 24시간 (밀리초)
 
 # 로깅 설정
 logging:
@@ -18,5 +42,6 @@ logging:
     com.project.jejubeach: DEBUG
     org.springframework.web: DEBUG
     org.springframework.web.client: DEBUG
+    org.springframework.security: DEBUG
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
