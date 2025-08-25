@@ -26,6 +26,18 @@ spring:
   mvc:
     static-path-pattern: /videos/**
 
+# OpenAPI (Swagger) 설정
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+    doc-expansion: none
+    disable-swagger-default-url: true
+  packages-to-scan: com.project.jejubeach.controller
+
 # OpenAI API 설정
 openai:
   api:

@@ -23,15 +23,11 @@ public class AuthService {
     public AuthResponse register(RegisterRequest request) {
         // 사용자명과 이메일 중복 확인
         if (userRepository.existsByUsername(request.getUsername())) {
-            return AuthResponse.builder()
-                    .message("이미 존재하는 사용자명입니다")
-                    .build();
+            throw new RuntimeException("이미 존재하는 사용자명입니다");
         }
         
         if (userRepository.existsByEmail(request.getEmail())) {
-            return AuthResponse.builder()
-                    .message("이미 존재하는 이메일입니다")
-                    .build();
+            throw new RuntimeException("이미 존재하는 이메일입니다");
         }
 
         // 새 사용자 생성
@@ -52,7 +48,6 @@ public class AuthService {
                 .token(token)
                 .username(user.getUsername())
                 .role(user.getRole().name())
-                .message("회원가입이 완료되었습니다")
                 .build();
     }
 
@@ -69,9 +64,7 @@ public class AuthService {
                     .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다"));
 
             if (!user.getIsActive()) {
-                return AuthResponse.builder()
-                        .message("비활성화된 계정입니다")
-                        .build();
+                throw new RuntimeException("비활성화된 계정입니다");
             }
 
             String token = jwtService.generateToken(user);
@@ -80,13 +73,10 @@ public class AuthService {
                     .token(token)
                     .username(user.getUsername())
                     .role(user.getRole().name())
-                    .message("로그인이 완료되었습니다")
                     .build();
 
         } catch (Exception e) {
-            return AuthResponse.builder()
-                    .message("사용자명 또는 비밀번호가 올바르지 않습니다")
-                    .build();
+            throw new RuntimeException("사용자명 또는 비밀번호가 올바르지 않습니다");
         }
     }
 }

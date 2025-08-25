@@ -37,6 +37,9 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
+                // Swagger UI 및 OpenAPI 관련 경로 허용
+                .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/api-docs/**", "/v3/api-docs/**").permitAll()
+                // 기존 API 경로들
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/beaches/**").permitAll()
                 .requestMatchers("/api/chatbot/**").permitAll()
