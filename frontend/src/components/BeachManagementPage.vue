@@ -158,6 +158,8 @@
 </template>
 
 <script>
+import { useAuthStore } from '../stores/auth.js'
+
 export default {
   name: 'BeachManagementPage',
   data() {
@@ -179,18 +181,56 @@ export default {
     }
   },
   async mounted() {
+    const authStore = useAuthStore();
+    
+    // 인증 상태 업데이트
+    authStore.updateAuthStatus();
+    
+    // 인증 상태 확인
+    if (!authStore.isLoggedIn) {
+      this.showMessage('로그인이 필요합니다.', 'danger');
+      this.$router.push('/login');
+      return;
+    }
+    
+    // 관리자 권한 확인
+    if (!authStore.isManager) {
+      this.showMessage('관리자 권한이 필요합니다.', 'danger');
+      this.$router.push('/');
+      return;
+    }
+    
     await this.loadBeaches();
   },
   methods: {
     async loadBeaches() {
       try {
-        const response = await fetch('http://localhost:8080/api/beaches');
+        const authStore = useAuthStore();
+        const token = authStore.token;
+        
+        const headers = {};
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+        
+        const response = await fetch('http://localhost:8080/api/beaches', {
+          headers: headers
+        });
+        
         if (response.ok) {
           this.beaches = await response.json();
+        } else if (response.status === 403) {
+          this.showMessage('권한이 없습니다. 관리자로 로그인해주세요.', 'danger');
+          this.$router.push('/login');
+        } else if (response.status === 401) {
+          this.showMessage('인증이 만료되었습니다. 다시 로그인해주세요.', 'danger');
+          authStore.clearAuth();
+          this.$router.push('/login');
         } else {
           this.showMessage('해변 목록을 불러오는데 실패했습니다', 'danger');
         }
       } catch (error) {
+        console.error('API 호출 오류:', error);
         this.showMessage('서버 연결에 실패했습니다', 'danger');
       }
     },

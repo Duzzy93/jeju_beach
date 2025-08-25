@@ -8,6 +8,7 @@ import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -39,13 +40,20 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Swagger UI 및 OpenAPI 관련 경로 허용
                 .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/api-docs/**", "/v3/api-docs/**").permitAll()
-                // 기존 API 경로들
+                // 인증 관련 API는 모두 허용
                 .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/api/beaches/**").permitAll()
+                // 해변 조회는 인증 없이 허용, 수정/삭제는 인증 필요
+                .requestMatchers(HttpMethod.GET, "/api/beaches").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/beaches/**").permitAll()
+                .requestMatchers("/api/beaches/**").authenticated()
+                // 챗봇 API는 인증 없이 허용
                 .requestMatchers("/api/chatbot/**").permitAll()
-                .requestMatchers("/api/videos/**").permitAll()  // BeachVideoController 접근 허용
-                .requestMatchers("/videos/**").permitAll()  // 동영상 파일 접근 허용
-                .requestMatchers("/ws/**").permitAll()  // WebSocket 접근 허용
+                // 비디오 관련 API는 인증 없이 허용
+                .requestMatchers("/api/videos/**").permitAll()
+                .requestMatchers("/videos/**").permitAll()
+                // WebSocket은 인증 없이 허용
+                .requestMatchers("/ws/**").permitAll()
+                // 기타 모든 요청은 인증 필요
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session

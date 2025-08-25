@@ -28,6 +28,11 @@ public class BeachController {
     
     private final BeachService beachService;
 
+    @GetMapping("/test")
+    public ResponseEntity<String> test() {
+        return ResponseEntity.ok("Beach API is working!");
+    }
+
     @GetMapping
     @Operation(summary = "모든 해변 조회", description = "등록된 모든 해변 정보를 조회합니다.")
     @ApiResponses(value = {
