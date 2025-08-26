@@ -19,6 +19,9 @@ public class AuthResponse {
     @Schema(description = "사용자명", example = "admin")
     private String username;
     
+    @Schema(description = "사용자 이메일", example = "admin@jejubeach.com")
+    private String email;
+    
     @Schema(description = "사용자 역할", example = "ADMIN")
     private String role;
 }

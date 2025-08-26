@@ -71,7 +71,7 @@
               <span :class="['badge', getRoleBadgeClass()]">{{ getRoleDisplayName() }}</span>
             </button>
             <ul class="dropdown-menu dropdown-menu-end">
-              <li><span class="dropdown-item-text text-muted">{{ email }}</span></li>
+              <li><span class="dropdown-item-text text-muted">{{ email || '이메일 정보 없음' }}</span></li>
               <li><hr class="dropdown-divider"></li>
               <li><a class="dropdown-item" href="#" @click.prevent="logout">
                 <i class="bi bi-box-arrow-right me-2"></i>로그아웃

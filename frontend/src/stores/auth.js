@@ -20,13 +20,13 @@ export const useAuthStore = defineStore('auth', {
       this.token = authData.token
       this.username = authData.username
       this.role = authData.role
-      this.email = authData.email || 'user@example.com'
+      this.email = authData.email || ''
       
       // localStorage에 저장
       localStorage.setItem('token', authData.token)
       localStorage.setItem('username', authData.username)
       localStorage.setItem('role', authData.role)
-      localStorage.setItem('email', authData.email || 'user@example.com')
+      localStorage.setItem('email', authData.email || '')
     },
 
     clearAuth() {

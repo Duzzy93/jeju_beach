@@ -152,7 +152,7 @@ export default {
             token: data.token,
             username: data.username,
             role: data.role,
-            email: data.email || 'user@example.com'
+            email: data.email
           });
           
           this.message = data.message || '로그인이 완료되었습니다';

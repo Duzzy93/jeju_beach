@@ -126,11 +126,6 @@
               <div class="beach-content">
                 <h4>함덕해변</h4>
                 <p>제주도 동부의 대표적인 해변으로, 맑은 바다와 백사장이 아름다운 해변입니다.</p>
-                <template v-if="isLoggedIn && isManager && !isAdmin">
-                  <router-link to="/beach-crowd/hamduck" class="btn btn-outline-primary">
-                    자세히 보기
-                  </router-link>
-                </template>
               </div>
             </div>
           </div>
@@ -140,11 +135,6 @@
               <div class="beach-content">
                 <h4>이호해변</h4>
                 <p>공항 근처에 위치해 있어 접근성이 좋고, 평화로운 분위기의 해변입니다.</p>
-                <template v-if="isLoggedIn && isManager && !isAdmin">
-                  <router-link to="/beach-crowd/iho" class="btn btn-outline-primary">
-                    자세히 보기
-                  </router-link>
-                </template>
               </div>
             </div>
           </div>
@@ -154,11 +144,6 @@
               <div class="beach-content">
                 <h4>월정리해변</h4>
                 <p>맑은 바다와 카페 거리로 유명하며, 다양한 편의시설을 갖춘 해변입니다.</p>
-                <template v-if="isLoggedIn && isManager && !isAdmin">
-                  <router-link to="/beach-crowd/walljeonglee" class="btn btn-outline-primary">
-                    자세히 보기
-                  </router-link>
-                </template>
               </div>
             </div>
           </div>
