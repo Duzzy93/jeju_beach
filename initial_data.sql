@@ -17,10 +17,10 @@ INSERT INTO users (username, email, password_hash, role, is_active, created_at, 
 -- ========================================
 -- 2. 샘플 해변 데이터 추가 (video_path 포함)
 -- ========================================
-INSERT INTO beaches (name, region, latitude, longitude, description, video_path, created_by) VALUES 
-('함덕해변', '제주시 구좌읍', 33.5431, 126.6674, '제주 동부의 아름다운 백사장과 에메랄드빛 바다가 어우러진 해변', '/videos/hamduck_beach.mp4', 1),
-('이호테우해변', '제주시 이도1동', 33.4991, 126.5312, '제주시내에서 가까운 접근성이 좋은 해변', '/videos/iho_beach.mp4', 1),
-('월정리해변', '제주시 구좌읍', 33.5589, 126.7856, '제주 최동단에 위치한 아름다운 해변', '/videos/walljeonglee_beach.mp4', 1);
+INSERT INTO beaches (name, region, latitude, longitude, description, video_path, created_by, created_at, updated_at) VALUES 
+('함덕해변', '제주시 구좌읍', 33.5431, 126.6674, '제주 동부의 아름다운 백사장과 에메랄드빛 바다가 어우러진 해변', '/videos/hamduck_beach.mp4', 1, NOW(), NOW()),
+('이호테우해변', '제주시 이도1동', 33.4991, 126.5312, '제주시내에서 가까운 접근성이 좋은 해변', '/videos/iho_beach.mp4', 1, NOW(), NOW()),
+('월정리해변', '제주시 구좌읍', 33.5589, 126.7856, '제주 최동단에 위치한 아름다운 해변', '/videos/walljeonglee_beach.mp4', 1, NOW(), NOW());
 
 -- ========================================
 -- 3. 해변-매니저 매핑 데이터 추가
