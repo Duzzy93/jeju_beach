@@ -11,13 +11,16 @@
       
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav me-auto">
-          <!-- 관리자: 해변 관리, 관리자 메뉴만 표시 -->
+          <!-- 관리자: 해변 관리, CCTV 모니터링, 해변 혼잡도, AI 챗봇 표시 -->
           <template v-if="isLoggedIn && isAdmin">
             <li class="nav-item">
               <router-link class="nav-link" to="/beach-management">해변 관리</router-link>
             </li>
             <li class="nav-item">
-              <router-link class="nav-link" to="/admin">관리자</router-link>
+              <router-link class="nav-link" to="/admin">CCTV 모니터링</router-link>
+            </li>
+            <li class="nav-item">
+              <router-link class="nav-link" to="/beach-crowd">해변 혼잡도</router-link>
             </li>
             <li class="nav-item">
               <router-link class="nav-link" to="/chatbot">AI 챗봇</router-link>
@@ -73,6 +76,15 @@
             <ul class="dropdown-menu dropdown-menu-end">
               <li><span class="dropdown-item-text text-muted">{{ email || '이메일 정보 없음' }}</span></li>
               <li><hr class="dropdown-divider"></li>
+              <li v-if="isAdmin">
+                <router-link class="dropdown-item" to="/ai-model-status">
+                  <i class="bi bi-robot me-2"></i>
+                  AI 모델 상태
+                </router-link>
+              </li>
+              <li v-if="isAdmin">
+                <hr class="dropdown-divider">
+              </li>
               <li><a class="dropdown-item" href="#" @click.prevent="logout">
                 <i class="bi bi-box-arrow-right me-2"></i>로그아웃
               </a></li>

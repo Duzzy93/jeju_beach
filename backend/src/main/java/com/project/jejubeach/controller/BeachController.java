@@ -2,6 +2,7 @@ package com.project.jejubeach.controller;
 
 import com.project.jejubeach.dto.BeachRequest;
 import com.project.jejubeach.entity.Beach;
+import com.project.jejubeach.repository.BeachRepository;
 import com.project.jejubeach.service.BeachService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -17,7 +18,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/beaches")
@@ -27,6 +31,7 @@ import java.util.List;
 public class BeachController {
     
     private final BeachService beachService;
+    private final BeachRepository beachRepository;
 
     @GetMapping("/test")
     public ResponseEntity<String> test() {
@@ -96,6 +101,23 @@ public class BeachController {
         return ResponseEntity.ok(beaches);
     }
 
+    @GetMapping("/debug")
+    @Operation(summary = "데이터베이스 디버깅", description = "데이터베이스의 해변 데이터 상태를 확인합니다.")
+    public ResponseEntity<Map<String, Object>> debugBeachData() {
+        List<Beach> allBeaches = beachRepository.findAll();
+        Map<String, Object> debugInfo = new HashMap<>();
+        debugInfo.put("totalBeaches", allBeaches.size());
+        debugInfo.put("beaches", allBeaches.stream()
+            .map(beach -> Map.of(
+                "id", beach.getId(),
+                "name", beach.getName(),
+                "region", beach.getRegion(),
+                "status", beach.getStatus()
+            ))
+            .collect(Collectors.toList()));
+        return ResponseEntity.ok(debugInfo);
+    }
+
     @GetMapping("/search")
     @Operation(summary = "해변명 검색", description = "해변명으로 해변을 검색합니다.")
     @ApiResponses(value = {
@@ -106,6 +128,7 @@ public class BeachController {
             @Parameter(description = "검색할 해변명", required = true)
             @RequestParam String name) {
         List<Beach> beaches = beachService.searchBeachesByName(name);
+        System.out.println("검색 요청: " + name + ", 결과: " + beaches.size() + "개");
         return ResponseEntity.ok(beaches);
     }
 

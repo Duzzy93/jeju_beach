@@ -14,6 +14,50 @@
       </div>
     </section>
 
+    <!-- 실시간 탐지 데이터 섹션 -->
+    <section class="py-4 bg-light">
+      <div class="container">
+        <div class="row">
+          <div class="col-12">
+            <h3 class="text-center mb-4">
+              <i class="bi bi-activity me-2"></i>
+              실시간 탐지 현황
+            </h3>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <div class="card border-primary">
+                  <div class="card-body text-center">
+                    <i class="bi bi-people display-4 text-primary mb-2"></i>
+                    <h5 class="card-title">탐지된 인원 수</h5>
+                    <div class="display-6 fw-bold text-primary">
+                      {{ latestDetection?.personCount || 0 }}
+                    </div>
+                    <small class="text-muted">
+                      {{ latestDetection?.createdAt ? formatTime(latestDetection.createdAt) : '데이터 없음' }}
+                    </small>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="card border-danger">
+                  <div class="card-body text-center">
+                    <i class="bi bi-exclamation-triangle display-4 text-danger mb-2"></i>
+                    <h5 class="card-title">쓰러진 사람 수</h5>
+                    <div class="display-6 fw-bold text-danger">
+                      {{ latestDetection?.fallenCount || 0 }}
+                    </div>
+                    <small class="text-muted">
+                      {{ latestDetection?.source || '카메라 정보 없음' }}
+                    </small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- 해변 카드 섹션 -->
     <section class="py-5">
       <div class="container">
@@ -80,16 +124,22 @@ export default {
       userRole: null, // 사용자 권한 정보
       accessibleBeaches: [], // 사용자가 접근 가능한 해변 목록
       loading: true, // 데이터 로딩 상태
-      stompClient: null
+      stompClient: null,
+      latestDetection: null, // 최신 탐지 데이터
+      pollingInterval: null // WebSocket 연결 간격
     }
   },
   mounted() {
     this.fetchUserRole(); // 사용자 권한 페칭
     this.fetchAccessibleBeaches(); // 접근 가능한 해변 페칭
+    this.startPolling(); // 실시간 탐지 데이터 폴링 시작
   },
   beforeUnmount() {
     if (this.stompClient) {
       this.stompClient.disconnect();
+    }
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
     }
   },
   methods: {
@@ -131,19 +181,27 @@ export default {
         const token = localStorage.getItem('token');
         if (!token) {
           // 게스트는 모든 해변 표시 (하지만 수정 불가)
+          console.log('토큰이 없어 기본 해변 정보를 사용합니다.');
           this.accessibleBeaches = this.getDefaultBeaches();
           this.loading = false;
           return;
         }
         
+        console.log('해변 정보를 가져오는 중...');
         const response = await fetch('http://localhost:8080/api/user/beaches', {
           headers: {
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
           }
         });
         
+        console.log('API 응답 상태:', response.status);
+        console.log('API 응답 헤더:', response.headers);
+        
         if (response.ok) {
           const beaches = await response.json();
+          console.log('API에서 받은 해변 데이터:', beaches);
+          
           // 각 해변에 혼잡도 데이터 초기화
           this.accessibleBeaches = beaches.map(beach => ({
             ...beach,
@@ -153,17 +211,48 @@ export default {
             density: 'low'
           }));
           this.loading = false;
-          console.log('접근 가능한 해변:', this.accessibleBeaches);
+          console.log('처리된 해변 정보:', this.accessibleBeaches);
           
           // WebSocket 연결
           this.connectWebSocket();
         } else {
           console.error('접근 가능한 해변 페칭 실패:', response.status);
-          this.accessibleBeaches = this.getDefaultBeaches();
+          const errorText = await response.text();
+          console.error('오류 응답 내용:', errorText);
+          
+          // fallback으로 모든 해변 정보를 가져와보기
+          console.log('fallback으로 모든 해변 정보를 가져오는 중...');
+          try {
+            const fallbackResponse = await fetch('http://localhost:8080/api/beaches', {
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            if (fallbackResponse.ok) {
+              const allBeaches = await fallbackResponse.json();
+              console.log('fallback 해변 데이터:', allBeaches);
+              this.accessibleBeaches = allBeaches.map(beach => ({
+                ...beach,
+                currentCount: 0,
+                uniqueCount: 0,
+                fallenCount: 0,
+                density: 'low'
+              }));
+            } else {
+              console.error('fallback API도 실패:', fallbackResponse.status);
+              this.accessibleBeaches = this.getDefaultBeaches();
+            }
+          } catch (fallbackError) {
+            console.error('fallback API 호출 중 오류:', fallbackError);
+            this.accessibleBeaches = this.getDefaultBeaches();
+          }
+          
           this.loading = false;
         }
       } catch (error) {
         console.error('접근 가능한 해변 페칭 중 오류:', error);
+        console.error('오류 상세 정보:', error.message);
         this.accessibleBeaches = this.getDefaultBeaches();
         this.loading = false;
       }
@@ -213,6 +302,7 @@ export default {
         beach.fallenCount = data.fallenCount || 0;
         beach.density = this.getDensityLevel(beach.currentCount);
       }
+      this.latestDetection = data; // 최신 탐지 데이터 업데이트
     },
     
     getBeachKey(beachName) {
@@ -278,6 +368,45 @@ export default {
         return this.accessibleBeaches.map(beach => beach.name).join(', ') + ' 관리';
       } else {
         return '모든 해변 조회';
+      }
+    },
+
+    formatTime(timestamp) {
+      const date = new Date(timestamp);
+      return date.toLocaleTimeString();
+    },
+
+    startPolling() {
+      this.pollingInterval = setInterval(() => {
+        this.fetchLatestDetection();
+      }, 1000); // 1초마다 최신 탐지 데이터 폴링
+    },
+
+    async fetchLatestDetection() {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          this.latestDetection = null; // 게스트는 최신 탐지 데이터 표시 안 함
+          return;
+        }
+
+                 const response = await fetch('http://localhost:8080/api/detections/latest', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          this.latestDetection = data;
+          console.log('최신 탐지 데이터:', this.latestDetection);
+        } else {
+          console.error('최신 탐지 데이터 페칭 실패:', response.status);
+          this.latestDetection = null;
+        }
+      } catch (error) {
+        console.error('최신 탐지 데이터 페칭 중 오류:', error);
+        this.latestDetection = null;
       }
     }
   }

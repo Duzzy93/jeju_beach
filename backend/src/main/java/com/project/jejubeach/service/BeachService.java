@@ -37,7 +37,35 @@ public class BeachService {
     }
 
     public List<Beach> searchBeachesByName(String name) {
-        return beachRepository.findByNameContainingIgnoreCase(name);
+        // 먼저 정확한 이름으로 검색
+        List<Beach> exactMatches = beachRepository.findByNameContainingIgnoreCase(name);
+        if (!exactMatches.isEmpty()) {
+            return exactMatches;
+        }
+        
+        // 정확한 매치가 없으면 키워드 매핑으로 검색
+        String mappedName = mapBeachKeyword(name);
+        if (!mappedName.equals(name)) {
+            return beachRepository.findByNameContainingIgnoreCase(mappedName);
+        }
+        
+        return exactMatches;
+    }
+    
+    /**
+     * 해변 키워드를 실제 해변 이름으로 매핑
+     */
+    private String mapBeachKeyword(String keyword) {
+        switch (keyword.toLowerCase()) {
+            case "hamduck":
+                return "함덕해변";
+            case "iho":
+                return "이호테우해변";
+            case "walljeonglee":
+                return "월정리해변";
+            default:
+                return keyword;
+        }
     }
 
     // 매니저가 관리하는 해변들만 조회

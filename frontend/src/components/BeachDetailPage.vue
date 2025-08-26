@@ -6,8 +6,8 @@
       <div class="container">
         <div class="row">
           <div class="col-lg-8">
-            <h1 class="display-5 fw-bold mb-4">{{ beachDisplayName }}</h1>
-            <p class="lead mb-4">{{ beachDescription }}</p>
+            <h1 class="display-5 fw-bold mb-4">{{ beachData?.name || beachDisplayName }}</h1>
+            <p class="lead mb-4">{{ beachData?.description || beachDescription }}</p>
             
             <!-- 실시간 혼잡도 정보 -->
             <div class="row g-4 mb-5">
@@ -17,15 +17,6 @@
                     <i class="bi bi-people display-4 text-primary mb-3"></i>
                     <h5 class="card-title">현재 인원</h5>
                     <p class="display-6 fw-bold" :class="getDensityTextColor()">{{ personCount }}명</p>
-                  </div>
-                </div>
-              </div>
-              <div class="col-md-3">
-                <div class="card text-center">
-                  <div class="card-body">
-                    <i class="bi bi-person-badge display-4 text-success mb-3"></i>
-                    <h5 class="card-title">총 방문자</h5>
-                    <p class="display-6 fw-bold text-success">{{ uniquePersonCount }}명</p>
                   </div>
                 </div>
               </div>
@@ -61,7 +52,7 @@
             </div>
 
             <!-- 동영상 플레이어 -->
-            <div class="card">
+            <div class="card mb-4">
               <div class="card-header">
                 <h5 class="mb-0">
                   <i class="bi bi-camera-video me-2"></i>
@@ -94,42 +85,91 @@
           </div>
 
           <div class="col-lg-4">
-            <!-- 해변 정보 카드 -->
+            <!-- 해변 기본 정보 카드 -->
             <div class="card mb-4">
               <div class="card-header">
                 <h5 class="mb-0">
                   <i class="bi bi-geo-alt me-2"></i>
-                  해변 정보
+                  기본 정보
                 </h5>
               </div>
               <div class="card-body">
                 <ul class="list-unstyled">
-                  <li class="mb-2">
-                    <i class="bi bi-map me-2 text-primary"></i>
-                    <strong>위치:</strong> {{ beachLocation }}
-                  </li>
-                  <li class="mb-2">
-                    <i class="bi bi-water me-2 text-info"></i>
-                    <strong>특징:</strong> {{ beachFeatures }}
-                  </li>
-                  <li class="mb-2">
-                    <i class="bi bi-sun me-2 text-warning"></i>
-                    <strong>최적 방문시간:</strong> {{ bestTime }}
-                  </li>
+                                     <li class="mb-2">
+                     <i class="bi bi-map me-2 text-primary"></i>
+                     <strong>위치:</strong> {{ beachData?.region || beachLocation }}
+                   </li>
+                   <li class="mb-2">
+                     <i class="bi bi-geo-alt me-2 text-success"></i>
+                     <strong>좌표:</strong> {{ beachData?.latitude ? `${beachData.latitude}, ${beachData.longitude}` : '좌표 정보가 없습니다.' }}
+                   </li>
+                   <li class="mb-2">
+                     <i class="bi bi-calendar me-2 text-info"></i>
+                     <strong>등록일:</strong> {{ beachData?.createdAt ? new Date(beachData.createdAt).toLocaleDateString('ko-KR') : '등록일 정보가 없습니다.' }}
+                   </li>
                 </ul>
               </div>
             </div>
 
-            <!-- 혼잡도 히스토리 -->
-            <div class="card">
+            <!-- 해변 상세 정보 -->
+            <div class="card mb-4">
               <div class="card-header">
                 <h5 class="mb-0">
-                  <i class="bi bi-graph-up me-2"></i>
-                  혼잡도 추이
+                  <i class="bi bi-info-circle me-2"></i>
+                  상세 정보
                 </h5>
               </div>
               <div class="card-body">
-                <canvas ref="densityChart" width="300" height="200"></canvas>
+                <div class="row">
+                  <div class="col-6">
+                    <small class="text-muted d-block">해변 ID</small>
+                    <strong>{{ beachData?.id || 'N/A' }}</strong>
+                  </div>
+                  <div class="col-6">
+                    <small class="text-muted d-block">상태</small>
+                    <span class="badge bg-success">{{ beachData?.status || '활성' }}</span>
+                  </div>
+                </div>
+                <hr>
+                <div class="row">
+                  <div class="col-6">
+                    <small class="text-muted d-block">생성자</small>
+                    <strong>{{ beachData?.createdBy || 'N/A' }}</strong>
+                  </div>
+                  <div class="col-6">
+                    <small class="text-muted d-block">수정일</small>
+                    <strong>{{ beachData?.updatedAt ? new Date(beachData.updatedAt).toLocaleDateString('ko-KR') : 'N/A' }}</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- 해변 위치 정보 -->
+            <div v-if="beachData?.latitude && beachData?.longitude" class="card">
+              <div class="card-header">
+                <h5 class="mb-0">
+                  <i class="bi bi-map me-2"></i>
+                  해변 위치
+                </h5>
+              </div>
+              <div class="card-body">
+                <div class="text-center">
+                  <div class="mb-3">
+                    <i class="bi bi-geo-alt display-4 text-primary"></i>
+                  </div>
+                  <p class="mb-2">
+                    <strong>위도:</strong> {{ beachData.latitude }}°N
+                  </p>
+                  <p class="mb-2">
+                    <strong>경도:</strong> {{ beachData.longitude }}°E
+                  </p>
+                  <p class="mb-0">
+                    <small class="text-muted">
+                      <i class="bi bi-info-circle me-1"></i>
+                      정확한 GPS 좌표로 해변을 찾을 수 있습니다.
+                    </small>
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -148,8 +188,6 @@ export default {
       beachDisplayName: '',
       beachDescription: '',
       beachLocation: '',
-      beachFeatures: '',
-      bestTime: '',
       personCount: 0,
       uniquePersonCount: 0,
       fallenCount: 0,
@@ -161,7 +199,8 @@ export default {
       stompClient: null,
       beachData: null, // 해변 정보를 저장할 데이터
       userRole: 'GUEST', // 사용자 역할
-      hasAccess: false // 해변 접근 권한
+      hasAccess: false, // 해변 접근 권한
+      detectionInterval: null // 탐지 데이터 폴링을 위한 인터벌
     }
   },
   mounted() {
@@ -186,6 +225,9 @@ export default {
     if (this.stompClient) {
       this.stompClient.disconnect();
     }
+    if (this.detectionInterval) {
+      clearInterval(this.detectionInterval);
+    }
   },
   methods: {
     async initializeBeachData() {
@@ -193,85 +235,152 @@ export default {
       this.beachName = beachName;
       
       try {
-        // API에서 해변 정보 가져오기
+        // API에서 해변 정보 가져오기 (더 정확한 검색)
+        console.log('해변 검색 시작:', beachName);
         const response = await fetch(`http://localhost:8080/api/beaches/search?name=${encodeURIComponent(beachName)}`);
+        console.log('검색 API 응답 상태:', response.status);
+        
         if (response.ok) {
           const beaches = await response.json();
+          console.log('검색 결과:', beaches);
+          
           if (beaches.length > 0) {
             this.beachData = beaches[0];
+            
+            // 기본 정보 설정 (fallback용)
             this.beachDisplayName = this.beachData.name;
-            this.beachDescription = this.beachData.description || '';
-            this.beachLocation = this.beachData.region || '';
+            this.beachDescription = this.beachData.description || '해변 설명이 없습니다.';
+            this.beachLocation = this.beachData.region || '위치 정보가 없습니다.';
             
             // 동영상 경로 설정
             if (this.beachData.videoPath) {
               this.videoSource = `http://localhost:8080${this.beachData.videoPath}`;
             } else {
-              // 기본 동영상 경로 (fallback)
-              this.setDefaultVideoPath(beachName);
+              // 동영상 경로가 없는 경우 기본 경로 사용
+              this.videoSource = `http://localhost:8080/videos/${beachName}_beach.mp4`;
             }
+            
+            console.log('해변 정보 로드 성공:', this.beachData);
+            console.log('해변 상세 정보:', {
+              id: this.beachData.id,
+              name: this.beachData.name,
+              region: this.beachData.region,
+              description: this.beachData.description,
+              latitude: this.beachData.latitude,
+              longitude: this.beachData.longitude,
+              videoPath: this.beachData.videoPath,
+              status: this.beachData.status,
+              createdBy: this.beachData.createdBy,
+              createdAt: this.beachData.createdAt,
+              updatedAt: this.beachData.updatedAt
+            });
           } else {
-            // API에서 찾을 수 없는 경우 기본값 사용
-            this.setDefaultBeachInfo(beachName);
+            // API에서 찾을 수 없는 경우 fallback으로 모든 해변 조회
+            console.log('검색 결과가 없어 모든 해변을 조회합니다.');
+            await this.fetchAllBeachesAsFallback(beachName);
           }
         } else {
-          // API 오류 시 기본값 사용
-          this.setDefaultBeachInfo(beachName);
+          // API 오류 시 fallback으로 모든 해변 조회
+          console.log('검색 API 오류로 모든 해변을 조회합니다.');
+          await this.fetchAllBeachesAsFallback(beachName);
         }
       } catch (error) {
         console.error('해변 정보 로드 실패:', error);
-        // 오류 시 기본값 사용
-        this.setDefaultBeachInfo(beachName);
+        // 오류 시 오류 처리
+        this.handleAPIError(beachName);
       }
     },
     
-    setDefaultBeachInfo(beachName) {
-      // 해변별 기본 정보 설정
-      switch (beachName) {
-        case 'hamduck':
-          this.beachDisplayName = '함덕해변';
-          this.beachDescription = '제주도 동부에 위치한 아름다운 해변으로, 맑은 물과 깨끗한 모래사장이 특징입니다.';
-          this.beachLocation = '제주특별자치도 제주시 구좌읍';
-          this.beachFeatures = '맑은 물, 깨끗한 모래사장, 아름다운 경관';
-          this.bestTime = '오전 9시 ~ 오후 3시';
-          break;
-        case 'iho':
-          this.beachDisplayName = '이호해변';
-          this.beachDescription = '제주도 서부의 평화로운 해변으로, 일몰을 감상하기 좋은 곳입니다.';
-          this.beachLocation = '제주특별자치도 제주시 이호동';
-          this.beachFeatures = '평화로운 분위기, 일몰 감상, 조용한 환경';
-          this.bestTime = '오후 4시 ~ 저녁 8시';
-          break;
-        case 'walljeonglee':
-          this.beachDisplayName = '월정리해변';
-          this.beachDescription = '제주도 동부의 유명한 해변으로, 투명한 물과 다양한 해양생물이 특징입니다.';
-          this.beachLocation = '제주특별자치도 제주시 구좌읍';
-          this.beachFeatures = '투명한 물, 해양생물, 스노클링';
-          this.bestTime = '오전 10시 ~ 오후 4시';
-          break;
+    async fetchAllBeachesAsFallback(beachName) {
+      try {
+        console.log('fallback: 모든 해변 정보를 가져오는 중...');
+        const fallbackResponse = await fetch('http://localhost:8080/api/beaches');
+        
+        if (fallbackResponse.ok) {
+          const allBeaches = await fallbackResponse.json();
+          console.log('fallback: 모든 해변 데이터:', allBeaches);
+          
+          // 해변 키워드로 매핑하여 찾기
+          const mappedName = this.mapBeachKeyword(beachName);
+          const foundBeach = allBeaches.find(beach => 
+            beach.name.includes(mappedName) || 
+            beach.name.toLowerCase().includes(beachName.toLowerCase())
+          );
+          
+          if (foundBeach) {
+            console.log('fallback: 해변을 찾았습니다:', foundBeach);
+            this.beachData = foundBeach;
+            this.beachDisplayName = foundBeach.name;
+            this.beachDescription = foundBeach.description || '해변 설명이 없습니다.';
+            this.beachLocation = foundBeach.region || '위치 정보가 없습니다.';
+            
+            if (foundBeach.videoPath) {
+              this.videoSource = `http://localhost:8080${foundBeach.videoPath}`;
+            } else {
+              this.videoSource = `http://localhost:8080/videos/${beachName}_beach.mp4`;
+            }
+          } else {
+            console.log('fallback: 해변을 찾을 수 없어 기본 정보를 사용합니다.');
+            this.handleBeachNotFound(beachName);
+          }
+        } else {
+          console.error('fallback API 실패:', fallbackResponse.status);
+          this.handleBeachNotFound(beachName);
+        }
+      } catch (error) {
+        console.error('fallback 실행 중 오류:', error);
+        this.handleBeachNotFound(beachName);
       }
+    },
+    
+    mapBeachKeyword(beachName) {
+      switch (beachName.toLowerCase()) {
+        case 'hamduck':
+          return '함덕해변';
+        case 'iho':
+          return '이호테우해변';
+        case 'walljeonglee':
+          return '월정리해변';
+        default:
+          return beachName;
+      }
+    },
+    
+    handleBeachNotFound(beachName) {
+      console.error(`해변을 찾을 수 없습니다: ${beachName}`);
+      this.beachDisplayName = '해변 정보 없음';
+      this.beachDescription = '해변 정보를 찾을 수 없습니다.';
+      this.beachLocation = '위치 정보 없음';
+      this.videoSource = `http://localhost:8080/videos/${beachName}_beach.mp4`;
       
-      // 기본 동영상 경로 설정
-      this.setDefaultVideoPath(beachName);
+      // 사용자에게 알림
+      this.$nextTick(() => {
+        if (this.$router.currentRoute.value.name === 'BeachDetail') {
+          alert('해당 해변 정보를 찾을 수 없습니다. 관리자에게 문의하세요.');
+        }
+      });
     },
     
-    setDefaultVideoPath(beachName) {
-      // 기본 동영상 경로 (fallback)
-      switch (beachName) {
-        case 'hamduck':
-          this.videoSource = 'http://localhost:8080/videos/hamduck_beach.mp4';
-          break;
-        case 'iho':
-          this.videoSource = 'http://localhost:8080/videos/iho_beach.mp4';
-          break;
-        case 'walljeonglee':
-          this.videoSource = 'http://localhost:8080/videos/walljeonglee_beach.mp4';
-          break;
-      }
+    handleAPIError(beachName) {
+      console.error(`API 오류 발생: ${beachName}`);
+      this.beachDisplayName = '오류 발생';
+      this.beachDescription = '해변 정보를 불러오는 중 오류가 발생했습니다.';
+      this.beachLocation = '오류';
+      this.videoSource = `http://localhost:8080/videos/${beachName}_beach.mp4`;
+      
+      // 사용자에게 알림
+      this.$nextTick(() => {
+        if (this.$router.currentRoute.value.name === 'BeachDetail') {
+          alert('해변 정보를 불러오는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+        }
+      });
     },
     startRealTimeUpdates() {
       // WebSocket 연결 시도
       this.connectWebSocket();
+      
+      // 실시간 탐지 데이터 폴링 시작
+      this.startDetectionPolling();
       
       // WebSocket 연결 실패 시 폴백으로 시뮬레이션 데이터 사용
       this.updateInterval = setInterval(() => {
@@ -282,6 +391,59 @@ export default {
       
       // 초기 데이터 로드
       this.updateCrowdData();
+    },
+
+    startDetectionPolling() {
+      // 1초마다 최신 탐지 데이터 폴링 (더 실시간으로 갱신)
+      this.detectionInterval = setInterval(() => {
+        this.fetchLatestDetection();
+      }, 1000);
+    },
+
+    async fetchLatestDetection() {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          return; // 게스트는 탐지 데이터를 가져올 수 없음
+        }
+
+        // 현재 해변의 최신 탐지 데이터 조회
+        const beachName = this.beachName;
+        const response = await fetch(`http://localhost:8080/api/detections/beach/${beachName}/latest`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          this.updateFromDetectionData(data);
+        } else if (response.status === 204) {
+          // 데이터가 없는 경우 시뮬레이션 데이터 사용
+          console.log('해변별 탐지 데이터가 없습니다. 시뮬레이션 데이터를 사용합니다.');
+        }
+      } catch (error) {
+        console.error('최신 탐지 데이터 페칭 실패:', error);
+      }
+    },
+
+    updateFromDetectionData(data) {
+      if (data && data.personCount !== undefined) {
+        this.personCount = data.personCount;
+      }
+      if (data && data.uniquePersonCount !== undefined) {
+        this.uniquePersonCount = data.uniquePersonCount;
+      }
+      if (data && data.fallenCount !== undefined) {
+        this.fallenCount = data.fallenCount;
+      }
+      if (data && data.densityLevel !== undefined) {
+        this.densityLevel = data.densityLevel;
+      }
+      if (data && data.lastUpdate !== undefined) {
+        this.lastUpdate = data.lastUpdate;
+      }
+      this.updateChart();
     },
     updateCrowdData() {
       // 시뮬레이션 데이터 (실제로는 WebSocket으로 받음)
@@ -436,10 +598,9 @@ export default {
     },
 
     getBeachKey(beachName) {
-      if (beachName.includes('함덕')) return 'hamduck';
-      if (beachName.includes('이호')) return 'iho';
-      if (beachName.includes('월정리')) return 'walljeonglee';
-      return beachName.toLowerCase();
+      // 해변 이름을 URL 경로에 맞는 키로 변환
+      // 데이터베이스의 해변 이름을 기반으로 동적 처리
+      return beachName.toLowerCase().replace(/[^a-z0-9]/g, '_');
     }
   }
 }

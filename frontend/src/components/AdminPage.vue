@@ -27,8 +27,28 @@
       </div>
     </div>
 
+    <!-- 로딩 상태 -->
+    <div v-if="loading" class="container text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">로딩 중...</span>
+      </div>
+      <p class="mt-3 text-muted">해변 정보를 불러오는 중...</p>
+    </div>
+
+    <!-- 오류 메시지 -->
+    <div v-else-if="error" class="container py-5">
+      <div class="alert alert-warning" role="alert">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        <strong>경고:</strong> {{ error }}
+        <button class="btn btn-sm btn-outline-warning ms-3" @click="loadBeachVideos">
+          <i class="bi bi-arrow-clockwise me-1"></i>
+          다시 시도
+        </button>
+      </div>
+    </div>
+
     <!-- CCTV 그리드 -->
-    <div class="container-fluid">
+    <div v-else class="container-fluid">
       <div class="row g-3">
         <div 
           v-for="video in videos" 
@@ -64,6 +84,7 @@
                 :id="`video-${video.id}`"
                 class="cctv-video w-100"
                 :src="video.videoUrl"
+                autoplay
                 loop
                 muted
                 @play="onVideoPlay(video.id)"
@@ -98,33 +119,36 @@
                     {{ getCurrentTime() }}
                   </span>
                 </div>
-                <!-- 동영상 상태 표시 -->
-                <div class="video-status mt-2">
-                  <span v-if="!isPlaying(video.id)" class="badge bg-warning">
-                    <i class="bi bi-pause-circle me-1"></i>
-                    일시정지
-                  </span>
-                  <span v-else class="badge bg-success">
-                    <i class="bi bi-play-circle me-1"></i>
-                    재생중
-                  </span>
+              </div>
+              
+              <!-- 로딩 인디케이터 -->
+              <div v-if="videoLoading[video.id]" class="loading-overlay d-flex align-items-center justify-content-center">
+                <div class="spinner-border text-light" role="status">
+                  <span class="visually-hidden">로딩 중...</span>
                 </div>
               </div>
             </div>
-            <div class="card-footer">
+            
+            <!-- 동영상 정보 -->
+            <div class="card-footer bg-light">
               <div class="row text-center">
                 <div class="col-4">
                   <small class="text-muted d-block">상태</small>
-                  <span class="badge bg-success">정상</span>
+                  <span :class="getStatusBadgeClass(video.id)">
+                    {{ getStatusText(video.id) }}
+                  </span>
                 </div>
                 <div class="col-4">
-                  <small class="text-muted d-block">해수욕장</small>
-                  <span class="badge bg-primary">{{ video.title }}</span>
+                  <small class="text-muted d-block">지역</small>
+                  <small class="fw-bold">{{ video.region || 'N/A' }}</small>
                 </div>
                 <div class="col-4">
-                  <small class="text-muted d-block">화질</small>
-                  <span class="badge bg-info">HD</span>
+                  <small class="text-muted d-block">해상도</small>
+                  <small class="fw-bold">{{ video.resolution || 'N/A' }}</small>
                 </div>
+              </div>
+              <div v-if="video.description" class="mt-2">
+                <small class="text-muted">{{ video.description }}</small>
               </div>
             </div>
           </div>
@@ -132,45 +156,28 @@
       </div>
     </div>
 
-    <!-- 통계 패널 -->
-    <div class="container-fluid mt-4">
-      <div class="row g-3">
-        <div class="col-md-3">
-          <div class="card bg-primary text-white">
-            <div class="card-body text-center">
-              <i class="bi bi-camera-video display-4"></i>
-              <h4 class="mt-2">{{ videos.length }}</h4>
-              <p class="mb-0">활성 CCTV</p>
-            </div>
-          </div>
+    <!-- 전체화면 모달 -->
+    <div v-if="fullscreenVideo" class="fullscreen-modal" @click="closeFullscreen">
+      <div class="fullscreen-content" @click.stop>
+        <div class="fullscreen-header d-flex justify-content-between align-items-center mb-3">
+          <h4 class="text-white mb-0">
+            <i class="bi bi-camera-video me-2"></i>
+            {{ fullscreenVideo.title }}
+          </h4>
+          <button class="btn btn-outline-light" @click="closeFullscreen">
+            <i class="bi bi-x-lg"></i>
+          </button>
         </div>
-        <div class="col-md-3">
-          <div class="card bg-success text-white">
-            <div class="card-body text-center">
-              <i class="bi bi-check-circle display-4"></i>
-              <h4 class="mt-2">{{ videos.length }}</h4>
-              <p class="mb-0">정상 작동</p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="card bg-info text-white">
-            <div class="card-body text-center">
-              <i class="bi bi-eye display-4"></i>
-              <h4 class="mt-2">실시간</h4>
-              <p class="mb-0">모니터링</p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="card bg-warning text-white">
-            <div class="card-body text-center">
-              <i class="bi bi-clock display-4"></i>
-              <h4 class="mt-2">{{ getCurrentTime() }}</h4>
-              <p class="mb-0">현재 시간</p>
-            </div>
-          </div>
-        </div>
+        <video
+          :ref="`fullscreen-video-${fullscreenVideo.id}`"
+          class="fullscreen-video"
+          :src="fullscreenVideo.videoUrl"
+          controls
+          autoplay
+          loop
+        >
+          동영상을 지원하지 않는 브라우저입니다.
+        </video>
       </div>
     </div>
   </div>
@@ -182,208 +189,238 @@ export default {
   data() {
     return {
       videos: [],
-      playingVideos: new Set(),
-      mutedVideos: new Set(),
+      videoStates: {},
+      videoLoadError: {},
+      videoLoading: {},
+      fullscreenVideo: null,
       currentTime: new Date(),
-      videoLoadError: {}
+      timeInterval: null,
+      loading: true,
+      error: null
     }
   },
   mounted() {
-    this.loadVideos()
-    this.startTimeUpdate()
+    this.loadBeachVideos();
+    this.startTimeUpdate();
   },
   beforeUnmount() {
-    this.stopTimeUpdate()
+    this.stopTimeUpdate();
+    this.stopAllVideos();
   },
   methods: {
-    async loadVideos() {
+    async loadBeachVideos() {
       try {
-        // 사용자 권한에 따라 해변 목록 가져오기
-        const endpoint = this.isAdmin() ? '/api/beaches/active' : '/api/beaches/my-beaches';
-        const response = await fetch(`http://localhost:8080${endpoint}`, {
-          headers: this.getAuthHeaders()
+        this.loading = true;
+        this.error = null;
+        
+        // 백엔드에서 해변 정보 가져오기
+        const response = await fetch('/api/beaches', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
         });
         
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
+          throw new Error('해변 정보를 가져올 수 없습니다.');
         }
         
-        const beaches = await response.json()
-        console.log('해변 API 응답:', beaches)
+        const beaches = await response.json();
         
-        // 해변 정보를 동영상 정보로 변환
+        // 해변 정보를 비디오 형식으로 변환
         this.videos = beaches.map(beach => ({
-          id: beach.id.toString(),
+          id: beach.id,
           title: beach.name,
-          videoUrl: beach.videoPath ? `http://localhost:8080${beach.videoPath}` : this.getDefaultVideoUrl(beach.name),
-          description: beach.description || `${beach.name} CCTV`,
-          region: beach.region
-        }))
+          videoUrl: beach.videoPath || `/videos/${beach.name.toLowerCase().replace(/[^a-z0-9]/g, '_')}_beach.mp4`,
+          resolution: '1920x1080', // 기본값
+          fps: '30', // 기본값
+          region: beach.region,
+          description: beach.description
+        }));
         
-        this.videoLoadError = {} // 비디오 로드 실패 상태 초기화
+        // 비디오 상태 초기화
+        this.initializeVideos();
+        
       } catch (error) {
-        console.error('동영상 로드 실패:', error)
-        this.videoLoadError = {} // 비디오 로드 실패 상태 초기화
-        // 테스트용 더미 데이터 - API 응답과 ID 일치
+        console.error('해변 정보 로드 오류:', error);
+        this.error = error.message;
+        
+        // 오류 발생 시 기본 해변 정보 사용
         this.videos = [
           {
-            id: 'hamduck',
-            title: '함덕 해변',
-            videoUrl: 'http://localhost:8080/videos/hamduck_beach.mp4',
-            description: '함덕 해변 CCTV'
+            id: 1,
+            title: '함덕해변',
+            videoUrl: '/videos/hamduck_beach.mp4',
+            resolution: '1920x1080',
+            fps: '30'
           },
           {
-            id: 'iho',
-            title: '이호 해변',
-            videoUrl: 'http://localhost:8080/videos/iho_beach.mp4',
-            description: '이호 해변 CCTV'
+            id: 2,
+            title: '이호테우해변',
+            videoUrl: '/videos/iho_beach.mp4',
+            resolution: '1920x1080',
+            fps: '30'
           },
           {
-            id: 'walljeonglee',
-            title: '월정리 해변',
-            videoUrl: 'http://localhost:8080/videos/walljeonglee_beach.mp4',
-            description: '월정리 해변 CCTV'
+            id: 3,
+            title: '월정리해변',
+            videoUrl: '/videos/walljeonglee_beach.mp4',
+            resolution: '1920x1080',
+            fps: '30'
           }
-        ]
+        ];
+        this.initializeVideos();
+      } finally {
+        this.loading = false;
       }
     },
     
-    getDefaultVideoUrl(beachName) {
-      // 기본 동영상 경로 (fallback)
-      const name = beachName.toLowerCase()
-      if (name.includes('함덕')) {
-        return 'http://localhost:8080/videos/hamduck_beach.mp4'
-      } else if (name.includes('이호')) {
-        return 'http://localhost:8080/videos/iho_beach.mp4'
-      } else if (name.includes('월정리')) {
-        return 'http://localhost:8080/videos/walljeonglee_beach.mp4'
-      }
-      return 'http://localhost:8080/videos/hamduck_beach.mp4' // 기본값
+    initializeVideos() {
+      this.videos.forEach(video => {
+        this.videoStates[video.id] = {
+          isPlaying: false,
+          isMuted: true,
+          isLoading: true,
+          hasError: false
+        };
+        this.videoLoadError[video.id] = null;
+        this.videoLoading[video.id] = true;
+      });
     },
-    refreshVideos() {
-      this.loadVideos()
-    },
-    togglePlayPause(videoId) {
-      const video = this.$refs[`video-${videoId}`]?.[0]
-      if (video) {
-        if (this.isPlaying(videoId)) {
-          video.pause()
-        } else {
-          video.play()
-        }
-      }
-    },
-    toggleMute(videoId) {
-      const video = this.$refs[`video-${videoId}`]?.[0]
-      if (video) {
-        video.muted = !video.muted
-        if (video.muted) {
-          this.mutedVideos.add(videoId)
-        } else {
-          this.mutedVideos.delete(videoId)
-        }
-      }
-    },
-    isPlaying(videoId) {
-      return this.playingVideos.has(videoId)
-    },
-    isMuted(videoId) {
-      return this.mutedVideos.has(videoId)
-    },
-    onVideoPlay(videoId) {
-      this.playingVideos.add(videoId)
-    },
-    onVideoPause(videoId) {
-      this.playingVideos.delete(videoId)
-    },
-    onVolumeChange(videoId) {
-      const video = this.$refs[`video-${videoId}`]?.[0]
-      if (video && video.muted) {
-        this.mutedVideos.add(videoId)
-      } else {
-        this.mutedVideos.delete(videoId)
-      }
-    },
-    getCurrentTime() {
-      return this.currentTime.toLocaleTimeString('ko-KR', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-      })
-    },
+    
     startTimeUpdate() {
       this.timeInterval = setInterval(() => {
-        this.currentTime = new Date()
-      }, 1000)
-    },
-    stopTimeUpdate() {
-      if (this.timeInterval) {
-        clearInterval(this.timeInterval)
-      }
-    },
-    toggleFullscreen() {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen()
-      } else {
-        document.exitFullscreen()
-      }
-    },
-    onVideoLoadStart(videoId) {
-      console.log(`Video ${videoId} load started.`)
-    },
-    onVideoLoadedData(videoId) {
-      console.log(`Video ${videoId} loaded data.`)
-    },
-    onVideoError(videoId, event) {
-      console.error(`Video ${videoId} error:`, event)
-      
-      // 에러 메시지 처리
-      let errorMessage = '동영상을 불러올 수 없습니다.'
-      
-      if (event.target && event.target.error) {
-        const error = event.target.error
-        switch (error.code) {
-          case MediaError.MEDIA_ERR_ABORTED:
-            errorMessage = '동영상 로드가 중단되었습니다.'
-            break
-          case MediaError.MEDIA_ERR_NETWORK:
-            errorMessage = '네트워크 오류로 동영상을 불러올 수 없습니다.'
-            break
-          case MediaError.MEDIA_ERR_DECODE:
-            errorMessage = '동영상 형식을 지원하지 않습니다.'
-            break
-          case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
-            errorMessage = '지원하지 않는 동영상 소스입니다.'
-            break
-          default:
-            errorMessage = '동영상 로드 중 오류가 발생했습니다.'
-        }
-      } else if (event.message) {
-        errorMessage = `동영상 로드 실패: ${event.message}`
-      }
-      
-      this.videoLoadError[videoId] = errorMessage
-    },
-    onVideoCanPlay(videoId) {
-      console.log(`Video ${videoId} can play.`)
-      // 동영상이 재생 가능한 상태가 되면 자동 재생
-      this.$nextTick(() => {
-        const video = this.$refs[`video-${videoId}`]?.[0]
-        if (video && !this.isPlaying(videoId)) {
-          video.play().catch(error => {
-            console.warn(`Auto-play failed for ${videoId}:`, error)
-          })
-        }
-      })
-    },
-    isAdmin() {
-      const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
-      return userInfo.role === 'ADMIN';
+        this.currentTime = new Date();
+      }, 1000);
     },
     
-    getAuthHeaders() {
-      const token = localStorage.getItem('token');
-      return token ? { 'Authorization': `Bearer ${token}` } : {};
+    stopTimeUpdate() {
+      if (this.timeInterval) {
+        clearInterval(this.timeInterval);
+      }
+    },
+    
+    getCurrentTime() {
+      return this.currentTime.toLocaleTimeString('ko-KR');
+    },
+    
+    refreshVideos() {
+      // 해변 정보를 다시 로드하고 비디오 새로고침
+      this.loadBeachVideos();
+    },
+    
+    togglePlayPause(videoId) {
+      const videoElement = this.$refs[`video-${videoId}`]?.[0];
+      if (videoElement) {
+        if (this.videoStates[videoId].isPlaying) {
+          videoElement.pause();
+        } else {
+          videoElement.play();
+        }
+      }
+    },
+    
+    toggleMute(videoId) {
+      const videoElement = this.$refs[`video-${videoId}`]?.[0];
+      if (videoElement) {
+        videoElement.muted = !videoElement.muted;
+        this.videoStates[videoId].isMuted = videoElement.muted;
+      }
+    },
+    
+    isPlaying(videoId) {
+      return this.videoStates[videoId]?.isPlaying || false;
+    },
+    
+    isMuted(videoId) {
+      return this.videoStates[videoId]?.isMuted !== false;
+    },
+    
+    onVideoPlay(videoId) {
+      this.videoStates[videoId].isPlaying = true;
+    },
+    
+    onVideoPause(videoId) {
+      this.videoStates[videoId].isPlaying = false;
+    },
+    
+    onVolumeChange(videoId) {
+      const videoElement = this.$refs[`video-${videoId}`]?.[0];
+      if (videoElement) {
+        this.videoStates[videoId].isMuted = videoElement.muted;
+      }
+    },
+    
+    onVideoLoadStart(videoId) {
+      this.videoLoading[videoId] = true;
+      this.videoLoadError[videoId] = null;
+    },
+    
+    onVideoLoadedData(videoId) {
+      this.videoLoading[videoId] = false;
+      this.videoStates[videoId].isLoading = false;
+    },
+    
+    onVideoError(videoId, event) {
+      this.videoLoading[videoId] = false;
+      this.videoStates[videoId].hasError = true;
+      this.videoLoadError[videoId] = '동영상을 로드할 수 없습니다.';
+      console.error(`Video ${videoId} error:`, event);
+    },
+    
+    onVideoCanPlay(videoId) {
+      this.videoLoading[videoId] = false;
+      this.videoStates[videoId].isLoading = false;
+    },
+    
+    getStatusBadgeClass(videoId) {
+      const state = this.videoStates[videoId];
+      if (state?.hasError) return 'badge bg-danger';
+      if (state?.isLoading) return 'badge bg-warning';
+      if (state?.isPlaying) return 'badge bg-success';
+      return 'badge bg-secondary';
+    },
+    
+    getStatusText(videoId) {
+      const state = this.videoStates[videoId];
+      if (state?.hasError) return '오류';
+      if (state?.isLoading) return '로딩';
+      if (state?.isPlaying) return '재생중';
+      return '정지';
+    },
+    
+    toggleFullscreen() {
+      if (this.fullscreenVideo) {
+        this.closeFullscreen();
+      } else {
+        // 첫 번째 비디오를 전체화면으로 표시
+        this.fullscreenVideo = this.videos[0];
+        this.$nextTick(() => {
+          const fullscreenElement = this.$refs[`fullscreen-video-${this.fullscreenVideo.id}`]?.[0];
+          if (fullscreenElement) {
+            fullscreenElement.play();
+          }
+        });
+      }
+    },
+    
+    closeFullscreen() {
+      if (this.fullscreenVideo) {
+        const fullscreenElement = this.$refs[`fullscreen-video-${this.fullscreenVideo.id}`]?.[0];
+        if (fullscreenElement) {
+          fullscreenElement.pause();
+        }
+        this.fullscreenVideo = null;
+      }
+    },
+    
+    stopAllVideos() {
+      this.videos.forEach(video => {
+        const videoElement = this.$refs[`video-${video.id}`]?.[0];
+        if (videoElement) {
+          videoElement.pause();
+        }
+      });
     }
   }
 }
@@ -400,14 +437,13 @@ export default {
 }
 
 .cctv-card {
-  transition: transform 0.2s, box-shadow 0.2s;
   border: none;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  transition: box-shadow 0.15s ease-in-out;
 }
 
 .cctv-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
 }
 
 .cctv-video {
@@ -420,58 +456,71 @@ export default {
   position: absolute;
   top: 10px;
   left: 10px;
-  right: 10px;
   z-index: 10;
 }
 
-.overlay-info {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+.overlay-info .badge {
+  font-size: 0.75rem;
 }
 
-.video-status {
-  display: flex;
-  justify-content: center;
-}
-
-.video-fallback {
+.loading-overlay {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  z-index: 20;
+}
+
+.video-fallback {
+  height: 200px;
   background-color: #f8f9fa;
   border: 2px dashed #dee2e6;
 }
 
-.cctv-controls {
+.fullscreen-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.9);
+  z-index: 9999;
   display: flex;
-  gap: 4px;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.fullscreen-content {
+  width: 100%;
+  max-width: 1200px;
+  max-height: 100%;
+}
+
+.fullscreen-video {
+  width: 100%;
+  height: 70vh;
+  object-fit: contain;
 }
 
 .cctv-controls .btn {
-  padding: 4px 8px;
+  padding: 0.25rem 0.5rem;
   font-size: 0.875rem;
 }
 
-/* 동영상 로딩 상태 표시 */
-.video-loading {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 5;
-}
-
-/* 동영상 오류 상태 표시 */
-.video-error {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 5;
-  text-align: center;
-  color: #dc3545;
+@media (max-width: 768px) {
+  .cctv-video {
+    height: 150px;
+  }
+  
+  .video-fallback {
+    height: 150px;
+  }
+  
+  .fullscreen-video {
+    height: 50vh;
+  }
 }
 </style>

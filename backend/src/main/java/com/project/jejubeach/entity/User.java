@@ -1,6 +1,6 @@
 package com.project.jejubeach.entity;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -49,7 +49,7 @@ public class User implements UserDetails {
     private LocalDateTime updatedAt;
     
     @OneToMany(mappedBy = "createdBy", cascade = CascadeType.ALL)
-    @JsonBackReference
+    @JsonIgnore
     private List<Beach> beaches;
     
     @PrePersist

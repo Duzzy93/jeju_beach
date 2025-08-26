@@ -37,9 +37,19 @@ INSERT INTO beach_managers (beach_id, user_id, assigned_at, is_active) VALUES
 INSERT INTO beach_managers (beach_id, user_id, assigned_at, is_active) VALUES 
 (3, 4, NOW(), 1);
 
+-- ========================================
+-- 4. 테스트용 탐지 데이터 추가
+-- ========================================
+-- 실제 운영에서는 AI 모델이 실시간으로 데이터를 생성
+INSERT INTO detection (person_count, fallen_count, source, created_at) VALUES 
+(15, 0, 'hamduck_camera_01', DATE_SUB(NOW(), INTERVAL 5 MINUTE)),
+(23, 1, 'iho_camera_01', DATE_SUB(NOW(), INTERVAL 4 MINUTE)),
+(8, 0, 'walljeonglee_camera_01', DATE_SUB(NOW(), INTERVAL 3 MINUTE)),
+(31, 2, 'hamduck_camera_01', DATE_SUB(NOW(), INTERVAL 2 MINUTE)),
+(12, 0, 'iho_camera_01', DATE_SUB(NOW(), INTERVAL 1 MINUTE));
 
 -- ========================================
--- 4. 데이터 확인
+-- 5. 데이터 확인
 -- ========================================
 SELECT '=== 사용자 데이터 ===' as info;
 SELECT id, username, email, role, is_active, created_at FROM users;

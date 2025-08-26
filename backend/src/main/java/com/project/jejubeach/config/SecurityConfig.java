@@ -53,6 +53,10 @@ public class SecurityConfig {
                 .requestMatchers("/videos/**").permitAll()
                 // WebSocket은 인증 없이 허용
                 .requestMatchers("/ws/**").permitAll()
+                // AI 모델 API는 인증 필요 (관리자만 접근)
+                .requestMatchers("/api/ai-model/**").authenticated()
+                // 탐지 데이터 API는 인증 없이 허용 (AI 모델에서 전송)
+                .requestMatchers("/api/detections/**").permitAll()
                 // 기타 모든 요청은 인증 필요
                 .anyRequest().authenticated()
             )

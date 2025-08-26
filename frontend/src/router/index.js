@@ -7,6 +7,7 @@ import AdminPage from '../components/AdminPage.vue'
 import ChatbotPage from '../components/ChatbotPage.vue'
 import LoginPage from '../components/LoginPage.vue'
 import BeachManagementPage from '../components/BeachManagementPage.vue'
+import AIModelStatusPage from '../components/AIModelStatusPage.vue'
 
 const routes = [
   {
@@ -23,13 +24,15 @@ const routes = [
   {
     path: '/beach-crowd',
     name: 'BeachCrowd',
-    component: BeachCrowdPage
+    component: BeachCrowdPage,
+    meta: { requiresAuth: true }
   },
   {
     path: '/beach-crowd/:beachName',
     name: 'BeachDetail',
     component: BeachDetailPage,
-    props: true
+    props: true,
+    meta: { requiresAuth: true }
   },
   {
     path: '/beach-management',
@@ -46,7 +49,14 @@ const routes = [
   {
     path: '/chatbot',
     name: 'Chatbot',
-    component: ChatbotPage
+    component: ChatbotPage,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/ai-model-status',
+    name: 'AIModelStatus',
+    component: AIModelStatusPage,
+    meta: { requiresAuth: true, requiresAdmin: true }
   }
 ]
 

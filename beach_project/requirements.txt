@@ -1,0 +1,20 @@
+# AI Model and Computer Vision
+ultralytics>=8.0.0
+opencv-python>=4.8.0
+numpy>=1.24.0
+
+# DeepSORT Tracking
+deep-sort-realtime>=1.3.0
+
+# HTTP Requests
+requests>=2.31.0
+
+# Logging and Utilities
+pathlib2>=2.3.7
+
+# Additional Dependencies
+Pillow>=9.0.0
+torch>=1.13.0
+torchvision>=0.14.0
+
+# Note: schedule 모듈은 제거됨 (Windows 인코딩 문제 해결)

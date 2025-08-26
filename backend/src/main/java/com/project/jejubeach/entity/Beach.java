@@ -1,6 +1,6 @@
 package com.project.jejubeach.entity;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -46,6 +46,7 @@ public class Beach {
     
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "created_by")
+    @JsonIgnore
     private User createdBy;
     
     @Column(name = "created_at", nullable = false)
