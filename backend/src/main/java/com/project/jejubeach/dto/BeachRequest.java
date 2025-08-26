@@ -31,4 +31,7 @@ public class BeachRequest {
     
     @Schema(description = "해변 설명", example = "제주도 대표적인 해변 중 하나입니다.")
     private String description;
+    
+    @Schema(description = "동영상 경로", example = "/videos/hamduck_beach.mp4")
+    private String videoPath;
 }

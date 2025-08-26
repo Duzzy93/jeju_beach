@@ -198,13 +198,28 @@ export default {
   methods: {
     async loadVideos() {
       try {
-        const response = await fetch('http://localhost:8080/api/videos')
+        // 사용자 권한에 따라 해변 목록 가져오기
+        const endpoint = this.isAdmin() ? '/api/beaches/active' : '/api/beaches/my-beaches';
+        const response = await fetch(`http://localhost:8080${endpoint}`, {
+          headers: this.getAuthHeaders()
+        });
+        
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`)
         }
-        const data = await response.json()
-        console.log('API 응답:', data)
-        this.videos = data
+        
+        const beaches = await response.json()
+        console.log('해변 API 응답:', beaches)
+        
+        // 해변 정보를 동영상 정보로 변환
+        this.videos = beaches.map(beach => ({
+          id: beach.id.toString(),
+          title: beach.name,
+          videoUrl: beach.videoPath ? `http://localhost:8080${beach.videoPath}` : this.getDefaultVideoUrl(beach.name),
+          description: beach.description || `${beach.name} CCTV`,
+          region: beach.region
+        }))
+        
         this.videoLoadError = {} // 비디오 로드 실패 상태 초기화
       } catch (error) {
         console.error('동영상 로드 실패:', error)
@@ -231,6 +246,19 @@ export default {
           }
         ]
       }
+    },
+    
+    getDefaultVideoUrl(beachName) {
+      // 기본 동영상 경로 (fallback)
+      const name = beachName.toLowerCase()
+      if (name.includes('함덕')) {
+        return 'http://localhost:8080/videos/hamduck_beach.mp4'
+      } else if (name.includes('이호')) {
+        return 'http://localhost:8080/videos/iho_beach.mp4'
+      } else if (name.includes('월정리')) {
+        return 'http://localhost:8080/videos/walljeonglee_beach.mp4'
+      }
+      return 'http://localhost:8080/videos/hamduck_beach.mp4' // 기본값
     },
     refreshVideos() {
       this.loadVideos()
@@ -347,6 +375,15 @@ export default {
           })
         }
       })
+    },
+    isAdmin() {
+      const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+      return userInfo.role === 'ADMIN';
+    },
+    
+    getAuthHeaders() {
+      const token = localStorage.getItem('token');
+      return token ? { 'Authorization': `Bearer ${token}` } : {};
     }
   }
 }

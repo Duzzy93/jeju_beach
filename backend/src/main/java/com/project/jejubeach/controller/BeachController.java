@@ -83,6 +83,19 @@ public class BeachController {
         return ResponseEntity.ok(beaches);
     }
 
+    @GetMapping("/my-beaches")
+    @Operation(summary = "내가 관리하는 해변 조회", description = "현재 로그인한 사용자가 관리할 수 있는 해변들을 조회합니다.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "조회 성공",
+            content = @Content(schema = @Schema(implementation = Beach.class))),
+        @ApiResponse(responseCode = "401", description = "인증 필요")
+    })
+    public ResponseEntity<List<Beach>> getMyBeaches() {
+        String username = getCurrentUsername();
+        List<Beach> beaches = beachService.getBeachesByManager(username);
+        return ResponseEntity.ok(beaches);
+    }
+
     @GetMapping("/search")
     @Operation(summary = "해변명 검색", description = "해변명으로 해변을 검색합니다.")
     @ApiResponses(value = {

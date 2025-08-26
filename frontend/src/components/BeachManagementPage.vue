@@ -1,456 +1,330 @@
 <template>
-  <div class="beach-management-container">
-    <div class="container mt-4">
+  <div class="beach-management-page">
+    <div class="container py-5">
       <div class="row">
-        <div class="col-12">
-          <h2 class="mb-4">해변 관리</h2>
-          
-          <!-- 해변 추가 버튼 -->
-          <div class="mb-3">
-            <button class="btn btn-primary" @click="showAddForm = true">
-              <i class="fas fa-plus"></i> 새 해변 추가
-            </button>
-          </div>
+        <div class="col-lg-8">
+          <h2 class="mb-4">
+            <i class="bi bi-geo-alt text-primary me-2"></i>
+            해변 관리
+          </h2>
           
           <!-- 해변 목록 -->
-          <div class="table-responsive">
-            <table class="table table-striped">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>이름</th>
-                  <th>지역</th>
-                  <th>위도</th>
-                  <th>경도</th>
-                  <th>상태</th>
-                  <th>생성자</th>
-                  <th>생성일</th>
-                  <th>작업</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="beach in beaches" :key="beach.id">
-                  <td>{{ beach.id }}</td>
-                  <td>{{ beach.name }}</td>
-                  <td>{{ beach.region }}</td>
-                  <td>{{ beach.latitude }}</td>
-                  <td>{{ beach.longitude }}</td>
-                  <td>
-                    <span :class="['badge', beach.status === 'ACTIVE' ? 'bg-success' : 'bg-secondary']">
-                      {{ beach.status === 'ACTIVE' ? '활성' : '비활성' }}
-                    </span>
-                  </td>
-                  <td>{{ beach.createdBy ? beach.createdBy.username : 'N/A' }}</td>
-                  <td>{{ formatDate(beach.createdAt) }}</td>
-                  <td>
-                    <div class="btn-group" role="group">
-                      <button class="btn btn-sm btn-outline-primary" @click="editBeach(beach)">
-                        수정
-                      </button>
-                      <button class="btn btn-sm btn-outline-warning" @click="toggleStatus(beach)">
-                        {{ beach.status === 'ACTIVE' ? '비활성화' : '활성화' }}
-                      </button>
-                      <button class="btn btn-sm btn-outline-danger" @click="deleteBeach(beach.id)">
-                        삭제
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <div class="card mb-4">
+            <div class="card-header">
+              <h5 class="mb-0">등록된 해변 목록</h5>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table table-hover">
+                  <thead>
+                    <tr>
+                      <th>해변명</th>
+                      <th>지역</th>
+                      <th>동영상 경로</th>
+                      <th>상태</th>
+                      <th>작업</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="beach in beaches" :key="beach.id">
+                      <td>{{ beach.name }}</td>
+                      <td>{{ beach.region || '-' }}</td>
+                      <td>
+                        <span v-if="beach.videoPath" class="text-success">
+                          <i class="bi bi-check-circle me-1"></i>
+                          {{ beach.videoPath }}
+                        </span>
+                        <span v-else class="text-warning">
+                          <i class="bi bi-exclamation-triangle me-1"></i>
+                          미설정
+                        </span>
+                      </td>
+                      <td>
+                        <span :class="getStatusBadgeClass(beach.status)">
+                          {{ getStatusText(beach.status) }}
+                        </span>
+                      </td>
+                      <td>
+                        <button class="btn btn-sm btn-outline-primary me-1" @click="editBeach(beach)">
+                          <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" @click="deleteBeach(beach.id)">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
-    
-    <!-- 해변 추가/수정 모달 -->
-    <div v-if="showAddForm || showEditForm" class="modal-overlay" @click="closeForm">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h5 class="modal-title">{{ showEditForm ? '해변 수정' : '새 해변 추가' }}</h5>
-          <button type="button" class="btn-close" @click="closeForm"></button>
-        </div>
         
-        <form @submit.prevent="showEditForm ? updateBeach() : createBeach()">
-          <div class="modal-body">
-            <div class="mb-3">
-              <label for="beach-name" class="form-label">해변명 *</label>
-              <input
-                type="text"
-                class="form-control"
-                id="beach-name"
-                v-model="beachForm.name"
-                required
-                placeholder="해변명을 입력하세요"
-              />
+        <div class="col-lg-4">
+          <!-- 해변 추가/수정 폼 -->
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">
+                <i class="bi bi-plus-circle text-success me-2"></i>
+                {{ isEditing ? '해변 수정' : '해변 추가' }}
+              </h5>
             </div>
-            
-            <div class="mb-3">
-              <label for="beach-region" class="form-label">지역</label>
-              <input
-                type="text"
-                class="form-control"
-                id="beach-region"
-                v-model="beachForm.region"
-                placeholder="지역을 입력하세요 (예: 제주시 구좌읍)"
-              />
-            </div>
-            
-            <div class="row">
-              <div class="col-md-6">
+            <div class="card-body">
+              <form @submit.prevent="saveBeach">
                 <div class="mb-3">
-                  <label for="beach-latitude" class="form-label">위도 *</label>
-                  <input
-                    type="number"
-                    class="form-control"
-                    id="beach-latitude"
-                    v-model="beachForm.latitude"
+                  <label class="form-label">해변명 *</label>
+                  <input 
+                    type="text" 
+                    class="form-control" 
+                    v-model="form.name" 
                     required
-                    step="0.0000001"
-                    placeholder="위도 (예: 33.5431)"
-                  />
+                    placeholder="예: 함덕해변"
+                  >
                 </div>
-              </div>
-              <div class="col-md-6">
+                
                 <div class="mb-3">
-                  <label for="beach-longitude" class="form-label">경도 *</label>
-                  <input
-                    type="number"
-                    class="form-control"
-                    id="beach-longitude"
-                    v-model="beachForm.longitude"
-                    required
-                    step="0.0000001"
-                    placeholder="경도 (예: 126.6674)"
-                  />
+                  <label class="form-label">지역</label>
+                  <input 
+                    type="text" 
+                    class="form-control" 
+                    v-model="form.region" 
+                    placeholder="예: 제주시 조천읍"
+                  >
                 </div>
-              </div>
-            </div>
-            
-            <div class="mb-3">
-              <label for="beach-description" class="form-label">설명</label>
-              <textarea
-                class="form-control"
-                id="beach-description"
-                v-model="beachForm.description"
-                rows="3"
-                placeholder="해변에 대한 설명을 입력하세요"
-              ></textarea>
+                
+                <div class="mb-3">
+                  <label class="form-label">위도</label>
+                  <input 
+                    type="number" 
+                    class="form-control" 
+                    v-model="form.latitude" 
+                    step="0.0000001"
+                    placeholder="예: 33.5589"
+                  >
+                </div>
+                
+                <div class="mb-3">
+                  <label class="form-label">경도</label>
+                  <input 
+                    type="number" 
+                    class="form-control" 
+                    v-model="form.longitude" 
+                    step="0.0000001"
+                    placeholder="예: 126.7944"
+                  >
+                </div>
+                
+                <div class="mb-3">
+                  <label class="form-label">설명</label>
+                  <textarea 
+                    class="form-control" 
+                    v-model="form.description" 
+                    rows="3"
+                    placeholder="해변에 대한 설명을 입력하세요"
+                  ></textarea>
+                </div>
+                
+                <div class="mb-3">
+                  <label class="form-label">동영상 경로 *</label>
+                  <input 
+                    type="text" 
+                    class="form-control" 
+                    v-model="form.videoPath" 
+                    required
+                    placeholder="예: /videos/hamduck_beach.mp4"
+                  >
+                  <small class="form-text text-muted">
+                    서버의 videos 폴더 내 동영상 파일 경로를 입력하세요
+                  </small>
+                </div>
+                
+                <div class="d-grid gap-2">
+                  <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-circle me-1"></i>
+                    {{ isEditing ? '수정' : '추가' }}
+                  </button>
+                  <button 
+                    v-if="isEditing" 
+                    type="button" 
+                    class="btn btn-outline-secondary"
+                    @click="cancelEdit"
+                  >
+                    <i class="bi bi-x-circle me-1"></i>
+                    취소
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
           
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" @click="closeForm">취소</button>
-            <button type="submit" class="btn btn-primary" :disabled="loading">
-              {{ loading ? '처리 중...' : (showEditForm ? '수정' : '추가') }}
-            </button>
+          <!-- 동영상 파일 업로드 가이드 -->
+          <div class="card mt-3">
+            <div class="card-header">
+              <h6 class="mb-0">
+                <i class="bi bi-info-circle text-info me-2"></i>
+                동영상 업로드 가이드
+              </h6>
+            </div>
+            <div class="card-body">
+              <ol class="small">
+                <li>동영상 파일을 <code>backend/videos/</code> 폴더에 업로드</li>
+                <li>파일명은 영문과 언더스코어 사용 권장</li>
+                <li>지원 형식: MP4, AVI, MOV</li>
+                <li>경로 예시: <code>/videos/beach_name.mp4</code></li>
+              </ol>
+            </div>
           </div>
-        </form>
+        </div>
       </div>
-    </div>
-    
-    <!-- 알림 메시지 -->
-    <div v-if="message" :class="['alert', messageType === 'success' ? 'alert-success' : 'alert-danger', 'alert-dismissible', 'position-fixed', 'top-0', 'end-0', 'm-3']" style="z-index: 1050;">
-      {{ message }}
-      <button type="button" class="btn-close" @click="message = ''"></button>
     </div>
   </div>
 </template>
 
 <script>
-import { useAuthStore } from '../stores/auth.js'
-
 export default {
   name: 'BeachManagementPage',
   data() {
     return {
       beaches: [],
-      beachForm: {
+      isEditing: false,
+      editingId: null,
+      form: {
         name: '',
         region: '',
         latitude: null,
         longitude: null,
-        description: ''
-      },
-      showAddForm: false,
-      showEditForm: false,
-      editingBeachId: null,
-      loading: false,
-      message: '',
-      messageType: 'success'
+        description: '',
+        videoPath: ''
+      }
     }
   },
-  async mounted() {
-    const authStore = useAuthStore();
-    
-    // 인증 상태 업데이트
-    authStore.updateAuthStatus();
-    
-    // 인증 상태 확인
-    if (!authStore.isLoggedIn) {
-      this.showMessage('로그인이 필요합니다.', 'danger');
-      this.$router.push('/login');
-      return;
-    }
-    
-    // 관리자 권한 확인
-    if (!authStore.isManager) {
-      this.showMessage('관리자 권한이 필요합니다.', 'danger');
-      this.$router.push('/');
-      return;
-    }
-    
-    await this.loadBeaches();
+  mounted() {
+    this.loadBeaches()
   },
   methods: {
     async loadBeaches() {
       try {
-        const authStore = useAuthStore();
-        const token = authStore.token;
-        
-        const headers = {};
-        if (token) {
-          headers['Authorization'] = `Bearer ${token}`;
-        }
-        
-        const response = await fetch('http://localhost:8080/api/beaches', {
-          headers: headers
-        });
-        
+        const response = await fetch('http://localhost:8080/api/beaches')
         if (response.ok) {
-          this.beaches = await response.json();
-        } else if (response.status === 403) {
-          this.showMessage('권한이 없습니다. 관리자로 로그인해주세요.', 'danger');
-          this.$router.push('/login');
-        } else if (response.status === 401) {
-          this.showMessage('인증이 만료되었습니다. 다시 로그인해주세요.', 'danger');
-          authStore.clearAuth();
-          this.$router.push('/login');
+          this.beaches = await response.json()
         } else {
-          this.showMessage('해변 목록을 불러오는데 실패했습니다', 'danger');
+          console.error('해변 목록 로드 실패')
         }
       } catch (error) {
-        console.error('API 호출 오류:', error);
-        this.showMessage('서버 연결에 실패했습니다', 'danger');
+        console.error('해변 목록 로드 오류:', error)
       }
     },
     
     editBeach(beach) {
-      this.beachForm = {
-        name: beach.name,
-        region: beach.region || '',
-        latitude: beach.latitude,
-        longitude: beach.longitude,
-        description: beach.description || ''
-      };
-      this.editingBeachId = beach.id;
-      this.showEditForm = true;
+      this.isEditing = true
+      this.editingId = beach.id
+      this.form = { ...beach }
     },
     
-    async createBeach() {
-      this.loading = true;
-      
-      try {
-        const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:8080/api/beaches', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify(this.beachForm)
-        });
-        
-        if (response.ok) {
-          this.showMessage('해변이 성공적으로 추가되었습니다', 'success');
-          this.closeForm();
-          await this.loadBeaches();
-        } else {
-          const error = await response.json();
-          this.showMessage(error.message || '해변 추가에 실패했습니다', 'danger');
-        }
-      } catch (error) {
-        this.showMessage('서버 연결에 실패했습니다', 'danger');
-      } finally {
-        this.loading = false;
-      }
+    cancelEdit() {
+      this.isEditing = false
+      this.editingId = null
+      this.resetForm()
     },
     
-    async updateBeach() {
-      this.loading = true;
-      
-      try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:8080/api/beaches/${this.editingBeachId}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify(this.beachForm)
-        });
-        
-        if (response.ok) {
-          this.showMessage('해변이 성공적으로 수정되었습니다', 'success');
-          this.closeForm();
-          await this.loadBeaches();
-        } else {
-          const error = await response.json();
-          this.showMessage(error.message || '해변 수정에 실패했습니다', 'danger');
-        }
-      } catch (error) {
-        this.showMessage('서버 연결에 실패했습니다', 'danger');
-      } finally {
-        this.loading = false;
-      }
-    },
-    
-    async deleteBeach(beachId) {
-      if (!confirm('정말로 이 해변을 삭제하시겠습니까?')) {
-        return;
-      }
-      
-      try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:8080/api/beaches/${beachId}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        if (response.ok) {
-          this.showMessage('해변이 성공적으로 삭제되었습니다', 'success');
-          await this.loadBeaches();
-        } else {
-          const error = await response.json();
-          this.showMessage(error.message || '해변 삭제에 실패했습니다', 'danger');
-        }
-      } catch (error) {
-        this.showMessage('서버 연결에 실패했습니다', 'danger');
-      }
-    },
-    
-    async toggleStatus(beach) {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:8080/api/beaches/${beach.id}/toggle-status`, {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        if (response.ok) {
-          this.showMessage('해변 상태가 변경되었습니다', 'success');
-          await this.loadBeaches();
-        } else {
-          const error = await response.json();
-          this.showMessage(error.message || '상태 변경에 실패했습니다', 'danger');
-        }
-      } catch (error) {
-        this.showMessage('서버 연결에 실패했습니다', 'danger');
-      }
-    },
-    
-    closeForm() {
-      this.showAddForm = false;
-      this.showEditForm = false;
-      this.editingBeachId = null;
-      this.beachForm = {
+    resetForm() {
+      this.form = {
         name: '',
         region: '',
         latitude: null,
         longitude: null,
-        description: ''
-      };
+        description: '',
+        videoPath: ''
+      }
     },
     
-    showMessage(message, type = 'success') {
-      this.message = message;
-      this.messageType = type;
-      setTimeout(() => {
-        this.message = '';
-      }, 3000);
+    async saveBeach() {
+      try {
+        const url = this.isEditing 
+          ? `http://localhost:8080/api/beaches/${this.editingId}`
+          : 'http://localhost:8080/api/beaches'
+        
+        const method = this.isEditing ? 'PUT' : 'POST'
+        
+        const response = await fetch(url, {
+          method: method,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(this.form)
+        })
+        
+        if (response.ok) {
+          alert(this.isEditing ? '해변 정보가 수정되었습니다.' : '새로운 해변이 추가되었습니다.')
+          this.loadBeaches()
+          this.cancelEdit()
+        } else {
+          alert('저장에 실패했습니다.')
+        }
+      } catch (error) {
+        console.error('해변 저장 오류:', error)
+        alert('저장 중 오류가 발생했습니다.')
+      }
     },
     
-    formatDate(dateString) {
-      if (!dateString) return 'N/A';
-      return new Date(dateString).toLocaleDateString('ko-KR');
+    async deleteBeach(id) {
+      if (!confirm('정말로 이 해변을 삭제하시겠습니까?')) {
+        return
+      }
+      
+      try {
+        const response = await fetch(`http://localhost:8080/api/beaches/${id}`, {
+          method: 'DELETE'
+        })
+        
+        if (response.ok) {
+          alert('해변이 삭제되었습니다.')
+          this.loadBeaches()
+        } else {
+          alert('삭제에 실패했습니다.')
+        }
+      } catch (error) {
+        console.error('해변 삭제 오류:', error)
+        alert('삭제 중 오류가 발생했습니다.')
+      }
+    },
+    
+    getStatusBadgeClass(status) {
+      return status === 'ACTIVE' ? 'badge bg-success' : 'badge bg-secondary'
+    },
+    
+    getStatusText(status) {
+      return status === 'ACTIVE' ? '활성' : '비활성'
     }
   }
 }
 </script>
 
 <style scoped>
-.beach-management-container {
+.beach-management-page {
   min-height: 100vh;
   background-color: #f8f9fa;
 }
 
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: white;
-  border-radius: 10px;
-  width: 90%;
-  max-width: 600px;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-.modal-header {
-  padding: 1rem;
-  border-bottom: 1px solid #dee2e6;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.modal-body {
-  padding: 1rem;
-}
-
-.modal-footer {
-  padding: 1rem;
-  border-top: 1px solid #dee2e6;
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
-}
-
-.btn-close {
-  background: none;
+.card {
   border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  border-radius: 12px;
 }
 
-.btn-close:hover {
-  opacity: 0.7;
+.card-header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+  border-radius: 12px 12px 0 0 !important;
 }
 
 .table th {
-  background-color: #e9ecef;
   border-top: none;
+  font-weight: 600;
 }
 
-.btn-group .btn {
-  margin-right: 2px;
-}
-
-.btn-group .btn:last-child {
-  margin-right: 0;
+.btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
 }
 </style>

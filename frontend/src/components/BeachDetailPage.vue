@@ -158,13 +158,17 @@ export default {
       videoSource: '',
       densityHistory: [],
       updateInterval: null,
-      stompClient: null
+      stompClient: null,
+      beachData: null, // 해변 정보를 저장할 데이터
+      userRole: 'GUEST', // 사용자 역할
+      hasAccess: false // 해변 접근 권한
     }
   },
   mounted() {
     this.initializeBeachData();
     this.startRealTimeUpdates();
     this.loadVideo();
+    this.checkUserAccess(); // 페이지 로드 시 사용자 권한 확인
   },
   watch: {
     '$route.params.beachName'(newVal) {
@@ -172,6 +176,7 @@ export default {
       this.initializeBeachData();
       this.loadVideo();
       this.startRealTimeUpdates();
+      this.checkUserAccess(); // 해변 이름 변경 시 권한 다시 확인
     }
   },
   beforeUnmount() {
@@ -183,11 +188,45 @@ export default {
     }
   },
   methods: {
-    initializeBeachData() {
+    async initializeBeachData() {
       const beachName = this.$route.params.beachName;
       this.beachName = beachName;
       
-      // 해변별 정보 설정
+      try {
+        // API에서 해변 정보 가져오기
+        const response = await fetch(`http://localhost:8080/api/beaches/search?name=${encodeURIComponent(beachName)}`);
+        if (response.ok) {
+          const beaches = await response.json();
+          if (beaches.length > 0) {
+            this.beachData = beaches[0];
+            this.beachDisplayName = this.beachData.name;
+            this.beachDescription = this.beachData.description || '';
+            this.beachLocation = this.beachData.region || '';
+            
+            // 동영상 경로 설정
+            if (this.beachData.videoPath) {
+              this.videoSource = `http://localhost:8080${this.beachData.videoPath}`;
+            } else {
+              // 기본 동영상 경로 (fallback)
+              this.setDefaultVideoPath(beachName);
+            }
+          } else {
+            // API에서 찾을 수 없는 경우 기본값 사용
+            this.setDefaultBeachInfo(beachName);
+          }
+        } else {
+          // API 오류 시 기본값 사용
+          this.setDefaultBeachInfo(beachName);
+        }
+      } catch (error) {
+        console.error('해변 정보 로드 실패:', error);
+        // 오류 시 기본값 사용
+        this.setDefaultBeachInfo(beachName);
+      }
+    },
+    
+    setDefaultBeachInfo(beachName) {
+      // 해변별 기본 정보 설정
       switch (beachName) {
         case 'hamduck':
           this.beachDisplayName = '함덕해변';
@@ -195,7 +234,6 @@ export default {
           this.beachLocation = '제주특별자치도 제주시 구좌읍';
           this.beachFeatures = '맑은 물, 깨끗한 모래사장, 아름다운 경관';
           this.bestTime = '오전 9시 ~ 오후 3시';
-          this.videoSource = 'http://localhost:8080/videos/hamduck_beach.mp4';
           break;
         case 'iho':
           this.beachDisplayName = '이호해변';
@@ -203,7 +241,6 @@ export default {
           this.beachLocation = '제주특별자치도 제주시 이호동';
           this.beachFeatures = '평화로운 분위기, 일몰 감상, 조용한 환경';
           this.bestTime = '오후 4시 ~ 저녁 8시';
-          this.videoSource = 'http://localhost:8080/videos/iho_beach.mp4';
           break;
         case 'walljeonglee':
           this.beachDisplayName = '월정리해변';
@@ -211,6 +248,23 @@ export default {
           this.beachLocation = '제주특별자치도 제주시 구좌읍';
           this.beachFeatures = '투명한 물, 해양생물, 스노클링';
           this.bestTime = '오전 10시 ~ 오후 4시';
+          break;
+      }
+      
+      // 기본 동영상 경로 설정
+      this.setDefaultVideoPath(beachName);
+    },
+    
+    setDefaultVideoPath(beachName) {
+      // 기본 동영상 경로 (fallback)
+      switch (beachName) {
+        case 'hamduck':
+          this.videoSource = 'http://localhost:8080/videos/hamduck_beach.mp4';
+          break;
+        case 'iho':
+          this.videoSource = 'http://localhost:8080/videos/iho_beach.mp4';
+          break;
+        case 'walljeonglee':
           this.videoSource = 'http://localhost:8080/videos/walljeonglee_beach.mp4';
           break;
       }
@@ -322,6 +376,70 @@ export default {
       } catch (error) {
         console.error('WebSocket 초기화 실패:', error);
       }
+    },
+
+    async checkUserAccess() {
+      try {
+        // 로컬 스토리지에서 사용자 정보 확인
+        const token = localStorage.getItem('token');
+        if (!token) {
+          this.userRole = 'GUEST';
+          this.hasAccess = true; // 게스트는 모든 해변 조회 가능
+          return;
+        }
+
+        // 사용자 정보 가져오기 (간단한 구현)
+        const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+        this.userRole = userInfo.role || 'USER';
+        
+        if (this.userRole === 'ADMIN') {
+          this.hasAccess = true; // ADMIN은 모든 해변 접근 가능
+        } else if (this.userRole === 'MANAGER') {
+          // MANAGER는 할당된 해변만 접근 가능
+          await this.checkManagerBeachAccess();
+        } else {
+          this.hasAccess = true; // USER는 모든 해변 조회 가능
+        }
+      } catch (error) {
+        console.error('사용자 권한 확인 실패:', error);
+        this.hasAccess = true; // 오류 시 기본적으로 접근 허용
+      }
+    },
+
+    async checkManagerBeachAccess() {
+      try {
+        const response = await fetch('http://localhost:8080/api/beaches/my-beaches', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        if (response.ok) {
+          const myBeaches = await response.json();
+          const currentBeachName = this.$route.params.beachName;
+          
+          // 현재 해변에 대한 접근 권한 확인
+          this.hasAccess = myBeaches.some(beach => {
+            const beachKey = this.getBeachKey(beach.name);
+            return beachKey === currentBeachName;
+          });
+          
+          if (!this.hasAccess) {
+            alert('해당 해변에 대한 관리 권한이 없습니다.');
+            this.$router.push('/');
+          }
+        }
+      } catch (error) {
+        console.error('매니저 해변 접근 권한 확인 실패:', error);
+        this.hasAccess = true; // 오류 시 기본적으로 접근 허용
+      }
+    },
+
+    getBeachKey(beachName) {
+      if (beachName.includes('함덕')) return 'hamduck';
+      if (beachName.includes('이호')) return 'iho';
+      if (beachName.includes('월정리')) return 'walljeonglee';
+      return beachName.toLowerCase();
     }
   }
 }

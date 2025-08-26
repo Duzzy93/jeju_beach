@@ -5,6 +5,7 @@ import com.project.jejubeach.entity.Beach;
 import com.project.jejubeach.entity.User;
 import com.project.jejubeach.repository.BeachRepository;
 import com.project.jejubeach.repository.UserRepository;
+import com.project.jejubeach.repository.BeachManagerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +18,7 @@ public class BeachService {
     
     private final BeachRepository beachRepository;
     private final UserRepository userRepository;
+    private final BeachManagerRepository beachManagerRepository;
 
     public List<Beach> getAllBeaches() {
         return beachRepository.findAll();
@@ -38,6 +40,27 @@ public class BeachService {
         return beachRepository.findByNameContainingIgnoreCase(name);
     }
 
+    // 매니저가 관리하는 해변들만 조회
+    public List<Beach> getBeachesByManager(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다"));
+        
+        if (user.getRole() == User.UserRole.ADMIN) {
+            // ADMIN은 모든 해변 조회 가능
+            return beachRepository.findAll();
+        } else if (user.getRole() == User.UserRole.MANAGER) {
+            // MANAGER는 할당된 해변만 조회
+            List<Long> beachIds = beachManagerRepository.findBeachIdsByUserId(user.getId());
+            if (beachIds.isEmpty()) {
+                return List.of(); // 할당된 해변이 없음
+            }
+            return beachRepository.findAllById(beachIds);
+        } else {
+            // USER는 활성 해변만 조회
+            return beachRepository.findByStatus(Beach.BeachStatus.ACTIVE);
+        }
+    }
+
     public Beach createBeach(BeachRequest request, String username) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다"));
@@ -48,6 +71,7 @@ public class BeachService {
                 .latitude(request.getLatitude())
                 .longitude(request.getLongitude())
                 .description(request.getDescription())
+                .videoPath(request.getVideoPath())
                 .status(Beach.BeachStatus.ACTIVE)
                 .createdBy(user)
                 .build();
@@ -59,12 +83,11 @@ public class BeachService {
         Beach beach = beachRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("해변을 찾을 수 없습니다"));
 
-        // 권한 확인 (생성자 또는 ADMIN만 수정 가능)
+        // 권한 확인
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다"));
 
-        if (!beach.getCreatedBy().getId().equals(user.getId()) && 
-            !user.getRole().equals(User.UserRole.ADMIN)) {
+        if (!hasBeachPermission(user, beach)) {
             throw new RuntimeException("해변을 수정할 권한이 없습니다");
         }
 
@@ -73,6 +96,7 @@ public class BeachService {
         beach.setLatitude(request.getLatitude());
         beach.setLongitude(request.getLongitude());
         beach.setDescription(request.getDescription());
+        beach.setVideoPath(request.getVideoPath());
 
         return beachRepository.save(beach);
     }
@@ -81,12 +105,11 @@ public class BeachService {
         Beach beach = beachRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("해변을 찾을 수 없습니다"));
 
-        // 권한 확인 (생성자 또는 ADMIN만 삭제 가능)
+        // 권한 확인
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다"));
 
-        if (!beach.getCreatedBy().getId().equals(user.getId()) && 
-            !user.getRole().equals(User.UserRole.ADMIN)) {
+        if (!hasBeachPermission(user, beach)) {
             throw new RuntimeException("해변을 삭제할 권한이 없습니다");
         }
 
@@ -112,5 +135,18 @@ public class BeachService {
         }
 
         return beachRepository.save(beach);
+    }
+
+    // 해변 권한 확인 메서드
+    private boolean hasBeachPermission(User user, Beach beach) {
+        if (user.getRole() == User.UserRole.ADMIN) {
+            return true; // ADMIN은 모든 권한
+        } else if (user.getRole() == User.UserRole.MANAGER) {
+            // MANAGER는 할당된 해변만 권한
+            return beachManagerRepository.findByBeachIdAndUserIdAndIsActiveTrue(beach.getId(), user.getId()).isPresent();
+        } else {
+            // USER는 생성한 해변만 권한
+            return beach.getCreatedBy().getId().equals(user.getId());
+        }
     }
 }

@@ -37,6 +37,9 @@ public class Beach {
     @Column(columnDefinition = "TEXT")
     private String description;
     
+    @Column(name = "video_path", length = 512)
+    private String videoPath;
+    
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private BeachStatus status = BeachStatus.ACTIVE;
