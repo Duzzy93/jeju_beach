@@ -18,7 +18,7 @@
          ▼                       ▼                       ▼
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   WebSocket     │    │   MySQL DB      │    │   OpenAI API    │
-│   (실시간 통신)   │    │  (데이터 저장)   │    │   (챗봇)         │
+│   (실시간 통신)  │    │  (데이터 저장)   │    │   (챗봇)        │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
@@ -247,8 +247,8 @@ npm run dev
 spring:
   datasource:
     url: jdbc:mysql://localhost:3306/jeju_beach_db
-    username: root
-    password: 12345
+    username: {username}
+    password: {password}
 
 # JWT 설정
 jwt:
