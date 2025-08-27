@@ -156,6 +156,8 @@
 </template>
 
 <script>
+import { useAiModelStore } from '../stores/aiModel'
+
 export default {
   name: 'AIModelStatusPage',
   data() {
@@ -174,6 +176,11 @@ export default {
       },
       statusUpdateInterval: null,
       logUpdateInterval: null
+    }
+  },
+  computed: {
+    aiModelStore() {
+      return useAiModelStore()
     }
   },
   mounted() {
@@ -229,51 +236,28 @@ export default {
     
     async loadStatus() {
       try {
-        // 인증 토큰 가져오기
-        const token = localStorage.getItem('token');
-        if (!token) {
-          throw new Error('인증 토큰이 없습니다. 로그인이 필요합니다.');
-        }
-
-        const response = await fetch('http://localhost:8080/api/ai-model/status', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
+        const result = await this.aiModelStore.fetchStatus()
+        
+        if (result.success) {
+          const data = result.data
+          if (data && data.status) {
+            this.aiModelStatus = data.status;
+            this.lastUpdateTime = new Date().toLocaleString();
+            
+            // 실행 시간과 분석 횟수 업데이트
+            if (data.runningTime) {
+              this.runningTime = this.formatRunningTime(data.runningTime);
+            }
+            if (data.analysisCount !== undefined) {
+              this.totalAnalysisCount = data.analysisCount;
+            }
+            
+            this.addLog('INFO', `AI 모델 상태 업데이트: ${data.status}`);
+          } else {
+            throw new Error('응답에 status 필드가 없습니다');
           }
-        });
-        
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        
-        const responseText = await response.text();
-        
-        if (!responseText || responseText.trim() === '') {
-          throw new Error('응답이 비어있습니다');
-        }
-        
-        let data;
-        try {
-          data = JSON.parse(responseText);
-        } catch (parseError) {
-          throw new Error(`JSON 파싱 실패: ${parseError.message}. 응답: ${responseText}`);
-        }
-        
-        if (data && data.status) {
-          this.aiModelStatus = data.status;
-          this.lastUpdateTime = new Date().toLocaleString();
-          
-          // 실행 시간과 분석 횟수 업데이트
-          if (data.runningTime) {
-            this.runningTime = this.formatRunningTime(data.runningTime);
-          }
-          if (data.analysisCount !== undefined) {
-            this.totalAnalysisCount = data.analysisCount;
-          }
-          
-          this.addLog('INFO', `AI 모델 상태 업데이트: ${data.status}`);
         } else {
-          throw new Error('응답에 status 필드가 없습니다');
+          throw new Error(result.error);
         }
         
       } catch (error) {
@@ -288,32 +272,23 @@ export default {
 
     async loadSystemInfo() {
       try {
-        // 인증 토큰 가져오기
-        const token = localStorage.getItem('token');
-        if (!token) {
-          throw new Error('인증 토큰이 없습니다. 로그인이 필요합니다.');
-        }
-
-        const response = await fetch('http://localhost:8080/api/ai-model/info', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
+        const result = await this.aiModelStore.fetchInfo()
+        
+        if (result.success) {
+          const data = result.data
+          if (data) {
+            this.systemInfo = {
+              pythonPath: data.pythonPath || 'python',
+              workingDir: data.workingDir || '../beach_project',
+              scriptPath: data.scriptPath || 'simple_detection_windows.py',
+              analysisInterval: data.analysisInterval || 30
+            };
+            this.addLog('INFO', '시스템 정보 업데이트 완료');
+          } else {
+            this.addLog('WARN', '시스템 정보 로드 실패 또는 응답이 비어있습니다.');
           }
-        });
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        const data = await response.json();
-        if (data) {
-          this.systemInfo = {
-            pythonPath: data.pythonPath || 'python',
-            workingDir: data.workingDir || '../beach_project',
-            scriptPath: data.scriptPath || 'simple_detection_windows.py',
-            analysisInterval: data.analysisInterval || 30
-          };
-          this.addLog('INFO', '시스템 정보 업데이트 완료');
         } else {
-          this.addLog('WARN', '시스템 정보 로드 실패 또는 응답이 비어있습니다.');
+          throw new Error(result.error);
         }
       } catch (error) {
         console.error('시스템 정보 로드 실패:', error);
@@ -324,25 +299,19 @@ export default {
     // 공통 API 호출 메서드
     async callAIModelAPI(endpoint, action) {
       try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          throw new Error('인증 토큰이 없습니다. 로그인이 필요합니다.');
-        }
-
-        const response = await fetch(`http://localhost:8080/api/ai-model/${endpoint}`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        const data = await response.json();
+        const result = await this.aiModelStore.controlModel(endpoint)
         
-        if (data.success) {
-          this.addLog('INFO', `AI 모델 ${action} 요청 성공`);
-          this.loadStatus();
+        if (result.success) {
+          const data = result.data
+          
+          if (data.success) {
+            this.addLog('INFO', `AI 모델 ${action} 요청 성공`);
+            this.loadStatus();
+          } else {
+            this.addLog('ERROR', `AI 모델 ${action} 실패: ${data.message}`);
+          }
         } else {
-          this.addLog('ERROR', `AI 모델 ${action} 실패: ${data.message}`);
+          this.addLog('ERROR', `AI 모델 ${action} 실패: ${result.error}`);
         }
       } catch (error) {
         console.error(`AI 모델 ${action} 실패:`, error);

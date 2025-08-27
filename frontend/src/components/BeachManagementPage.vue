@@ -181,6 +181,8 @@
 </template>
 
 <script>
+import { beachApi } from '../api/beachApi'
+
 export default {
   name: 'BeachManagementPage',
   data() {
@@ -204,14 +206,11 @@ export default {
   methods: {
     async loadBeaches() {
       try {
-        const response = await fetch('http://localhost:8080/api/beaches')
-        if (response.ok) {
-          this.beaches = await response.json()
-        } else {
-          console.error('해변 목록 로드 실패')
-        }
+        const beaches = await beachApi.getAllBeaches()
+        this.beaches = beaches
       } catch (error) {
         console.error('해변 목록 로드 오류:', error)
+        alert('해변 목록을 불러오는데 실패했습니다.')
       }
     },
     
@@ -240,27 +239,15 @@ export default {
     
     async saveBeach() {
       try {
-        const url = this.isEditing 
-          ? `http://localhost:8080/api/beaches/${this.editingId}`
-          : 'http://localhost:8080/api/beaches'
-        
-        const method = this.isEditing ? 'PUT' : 'POST'
-        
-        const response = await fetch(url, {
-          method: method,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(this.form)
-        })
-        
-        if (response.ok) {
-          alert(this.isEditing ? '해변 정보가 수정되었습니다.' : '새로운 해변이 추가되었습니다.')
-          this.loadBeaches()
-          this.cancelEdit()
+        if (this.isEditing) {
+          await beachApi.updateBeach(this.editingId, this.form)
+          alert('해변 정보가 수정되었습니다.')
         } else {
-          alert('저장에 실패했습니다.')
+          await beachApi.createBeach(this.form)
+          alert('새로운 해변이 추가되었습니다.')
         }
+        this.loadBeaches()
+        this.cancelEdit()
       } catch (error) {
         console.error('해변 저장 오류:', error)
         alert('저장 중 오류가 발생했습니다.')
@@ -273,16 +260,9 @@ export default {
       }
       
       try {
-        const response = await fetch(`http://localhost:8080/api/beaches/${id}`, {
-          method: 'DELETE'
-        })
-        
-        if (response.ok) {
-          alert('해변이 삭제되었습니다.')
-          this.loadBeaches()
-        } else {
-          alert('삭제에 실패했습니다.')
-        }
+        await beachApi.deleteBeach(id)
+        alert('해변이 삭제되었습니다.')
+        this.loadBeaches()
       } catch (error) {
         console.error('해변 삭제 오류:', error)
         alert('삭제 중 오류가 발생했습니다.')

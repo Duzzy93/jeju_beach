@@ -68,8 +68,8 @@
               <h4>🚀 빠른 질문</h4>
               <div class="d-grid gap-2">
                 <button 
-                  v-for="question in quickQuestions" 
-                  :key="question.content"
+                  v-for="(question, index) in quickQuestions" 
+                  :key="question.messageId || index"
                   @click="askQuickQuestion(question.content)"
                   class="btn btn-outline-primary btn-sm text-start"
                   :disabled="isLoading"
@@ -116,6 +116,8 @@
 </template>
 
 <script>
+import { useChatbotStore } from '../stores/chatbot'
+
 export default {
   name: 'ChatbotPage',
   data() {
@@ -123,7 +125,12 @@ export default {
       userInput: '',
       conversationHistory: [],
       isLoading: false,
-      quickQuestions: [],
+      quickQuestions: [
+        { role: 'user', content: '제주 해변 추천해줘' },
+        { role: 'user', content: '혼잡도가 낮은 해변은?' },
+        { role: 'user', content: '해변 근처 맛집 추천' },
+        { role: 'user', content: '제주 해변 날씨는?' }
+      ],
       beachInfo: {
         '함덕해변': {
           '위치': '제주도 동부',
@@ -152,7 +159,14 @@ export default {
       }
     }
   },
+  computed: {
+    chatbotStore() {
+      return useChatbotStore()
+    }
+  },
   mounted() {
+    console.log('ChatbotPage mounted');
+    console.log('초기 quickQuestions:', this.quickQuestions);
     this.loadQuickQuestions();
     this.scrollToBottom();
   },
@@ -176,40 +190,19 @@ export default {
       this.isLoading = true;
 
       try {
-        const response = await fetch('http://localhost:8080/api/chatbot/chat', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            message: messageToSend,
-            conversationHistory: this.conversationHistory
-          })
-        });
-
-        if (response.ok) {
-          const data = await response.json();
+        const result = await this.chatbotStore.sendMessage(messageToSend)
+        
+        if (result.success) {
+          const data = result.data
           const aiMessage = {
             role: 'assistant',
-            content: data.message,
+            content: data.message || data.response,
             timestamp: new Date(),
             messageId: data.messageId || this.generateId()
           };
           this.conversationHistory.push(aiMessage);
         } else {
-          const errorText = await response.text();
-          console.error('API 오류:', response.status, errorText);
-          
-          let errorMessage = 'API 요청 실패';
-          if (response.status === 401) {
-            errorMessage = 'OpenAI API 인증 오류입니다. 관리자에게 문의해주세요.';
-          } else if (response.status === 429) {
-            errorMessage = 'API 호출 한도를 초과했습니다. 잠시 후 다시 시도해주세요.';
-          } else if (response.status >= 500) {
-            errorMessage = '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
-          }
-          
-          throw new Error(errorMessage);
+          throw new Error(result.error);
         }
       } catch (error) {
         console.error('Error:', error);
@@ -232,12 +225,35 @@ export default {
 
     async loadQuickQuestions() {
       try {
-        const response = await fetch('http://localhost:8080/api/chatbot/quick-questions');
-        if (response.ok) {
-          this.quickQuestions = await response.json();
+        console.log('빠른 질문 로드 시작...');
+        
+        // 백엔드에서 빠른 질문 목록 가져오기
+        const result = await this.chatbotStore.fetchQuickQuestions();
+        console.log('빠른 질문 API 응답:', result);
+        
+        if (result.success && result.data && Array.isArray(result.data)) {
+          // 백엔드 응답 구조를 그대로 사용 (이미 ChatMessage 객체 형태)
+          this.quickQuestions = result.data;
+          console.log('매핑된 빠른 질문:', this.quickQuestions);
+        } else {
+          console.warn('API 응답이 예상과 다름, 기본 질문 사용');
+          // API 실패 시 기본 질문 사용 (ChatMessage 객체 형태로 통일)
+          this.quickQuestions = [
+            { role: 'user', content: '제주 해변 추천해줘' },
+            { role: 'user', content: '혼잡도가 낮은 해변은?' },
+            { role: 'user', content: '해변 근처 맛집 추천' },
+            { role: 'user', content: '제주 해변 날씨는?' }
+          ];
         }
       } catch (error) {
         console.error('빠른 질문 로드 실패:', error);
+        // 오류 시 기본 질문 사용 (ChatMessage 객체 형태로 통일)
+        this.quickQuestions = [
+          { role: 'user', content: '제주 해변 추천해줘' },
+          { role: 'user', content: '혼잡도가 낮은 해변은?' },
+          { role: 'user', content: '해변 근처 맛집 추천' },
+          { role: 'user', content: '제주 해변 날씨는?' }
+        ];
       }
     },
 

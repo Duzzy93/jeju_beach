@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -26,6 +27,7 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping("/role")
+    @PreAuthorize("authenticated")
     @Operation(summary = "현재 사용자 권한 조회", description = "현재 로그인한 사용자의 역할을 조회합니다.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "조회 성공"),
@@ -38,10 +40,12 @@ public class UserController {
     }
 
     @GetMapping("/beaches")
-    @Operation(summary = "현재 사용자가 접근 가능한 해변 조회", description = "현재 로그인한 사용자가 관리할 수 있는 해변들을 조회합니다.")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
+    @Operation(summary = "현재 사용자가 접근 가능한 해변 조회", description = "현재 로그인한 사용자가 관리할 수 있는 해변들을 조회합니다. (매니저 이상)")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "조회 성공"),
-        @ApiResponse(responseCode = "401", description = "인증 필요")
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "403", description = "권한 부족")
     })
     public ResponseEntity<List<Beach>> getAccessibleBeaches() {
         String username = getCurrentUsername();
@@ -50,6 +54,7 @@ public class UserController {
     }
 
     @GetMapping("/profile")
+    @PreAuthorize("authenticated")
     @Operation(summary = "현재 사용자 프로필 조회", description = "현재 로그인한 사용자의 프로필 정보를 조회합니다.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "조회 성공"),

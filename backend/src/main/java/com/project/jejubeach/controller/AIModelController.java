@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -64,10 +65,12 @@ public class AIModelController {
     }
 
     @PostMapping("/start")
-    @Operation(summary = "AI 모델 시작", description = "AI 모델을 수동으로 시작합니다.")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "AI 모델 시작", description = "AI 모델을 수동으로 시작합니다. (최고관리자만)")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "시작 성공"),
-        @ApiResponse(responseCode = "400", description = "이미 실행 중이거나 시작 실패")
+        @ApiResponse(responseCode = "400", description = "이미 실행 중이거나 시작 실패"),
+        @ApiResponse(responseCode = "403", description = "권한 부족")
     })
     public ResponseEntity<Map<String, Object>> startAIModel() {
         if (aiModelService.isAIModelRunning()) {
@@ -89,10 +92,12 @@ public class AIModelController {
     }
 
     @PostMapping("/stop")
-    @Operation(summary = "AI 모델 중지", description = "실행 중인 AI 모델을 중지합니다.")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "AI 모델 중지", description = "실행 중인 AI 모델을 중지합니다. (최고관리자만)")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "중지 성공"),
-        @ApiResponse(responseCode = "400", description = "실행 중인 AI 모델이 없음")
+        @ApiResponse(responseCode = "400", description = "실행 중인 AI 모델이 없음"),
+        @ApiResponse(responseCode = "403", description = "권한 부족")
     })
     public ResponseEntity<Map<String, Object>> stopAIModel() {
         if (!aiModelService.isAIModelRunning()) {

@@ -40,23 +40,47 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Swagger UI 및 OpenAPI 관련 경로 허용
                 .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/api-docs/**", "/v3/api-docs/**").permitAll()
+                
                 // 인증 관련 API는 모두 허용
                 .requestMatchers("/api/auth/**").permitAll()
-                // 해변 조회는 인증 없이 허용, 수정/삭제는 인증 필요
-                .requestMatchers(HttpMethod.GET, "/api/beaches").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/beaches/**").permitAll()
-                .requestMatchers("/api/beaches/**").authenticated()
-                // 챗봇 API는 인증 없이 허용
+                
+                // 홈페이지 및 정적 리소스 (비로그인 사용자도 접근 가능)
+                .requestMatchers("/", "/index.html", "/static/**", "/public/**").permitAll()
+                
+                // 챗봇 API (비로그인 사용자도 접근 가능)
                 .requestMatchers("/api/chatbot/**").permitAll()
-                // 비디오 관련 API는 인증 없이 허용
+                
+                // 비디오 관련 API (비로그인 사용자도 접근 가능)
                 .requestMatchers("/api/videos/**").permitAll()
                 .requestMatchers("/videos/**").permitAll()
-                // WebSocket은 인증 없이 허용
+                
+                // WebSocket (비로그인 사용자도 접근 가능)
                 .requestMatchers("/ws/**").permitAll()
-                // AI 모델 API는 인증 필요 (관리자만 접근)
-                .requestMatchers("/api/ai-model/**").authenticated()
-                // 탐지 데이터 API는 인증 없이 허용 (AI 모델에서 전송)
-                .requestMatchers("/api/detections/**").permitAll()
+                
+                // 탐지 데이터 조회 (비로그인 사용자도 접근 가능)
+                .requestMatchers(HttpMethod.GET, "/api/detections/**").permitAll()
+                
+                // AI 모델에서 보내는 탐지 데이터 저장 (비로그인 사용자도 접근 가능)
+                .requestMatchers(HttpMethod.POST, "/api/detections").permitAll()
+                
+                // 해변 조회는 모든 사용자에게 허용
+                .requestMatchers(HttpMethod.GET, "/api/beaches").permitAll()      // 해변 목록 조회
+                .requestMatchers(HttpMethod.GET, "/api/beaches/**").permitAll()  // 해변 상세 조회
+                
+                // 사용자 관련 API (로그인 사용자만)
+                .requestMatchers("/api/user/profile").authenticated()                          // 본인 프로필
+                .requestMatchers("/api/user/role").authenticated()                             // 본인 역할
+                
+                // MANAGER 역할 이상 접근 가능한 API
+                .requestMatchers("/api/user/beaches").hasAnyRole("MANAGER", "ADMIN")          // 관리 가능한 해변 조회
+                
+                // ADMIN 역할만 접근 가능한 API
+                .requestMatchers(HttpMethod.POST, "/api/beaches").hasRole("ADMIN")            // 해변 생성
+                .requestMatchers(HttpMethod.PUT, "/api/beaches/**").hasRole("ADMIN")          // 해변 수정
+                .requestMatchers(HttpMethod.DELETE, "/api/beaches/**").hasRole("ADMIN")       // 해변 삭제
+                .requestMatchers(HttpMethod.PATCH, "/api/beaches/**").hasRole("ADMIN")        // 해변 상태 변경
+                .requestMatchers("/api/ai-model/**").hasRole("ADMIN")                         // AI 모델 제어
+                
                 // 기타 모든 요청은 인증 필요
                 .anyRequest().authenticated()
             )

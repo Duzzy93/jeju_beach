@@ -48,9 +48,6 @@
           
           <!-- 비로그인 사용자: 기본 버튼 -->
           <template v-else>
-            <router-link to="/chatbot" class="btn btn-outline-light btn-lg">
-              🤖 AI 챗봇과 대화하기
-            </router-link>
           </template>
         </div>
       </div>
@@ -167,9 +164,11 @@
               <li>✅ 실시간 혼잡도 정보 제공</li>
               <li>✅ 한국어 자연어 대화 지원</li>
             </ul>
-            <router-link to="/chatbot" class="btn btn-primary btn-lg">
-              🚀 AI 챗봇 시작하기
-            </router-link>
+            <template v-if="isLoggedIn">
+              <router-link to="/chatbot" class="btn btn-primary btn-lg">
+                🚀 AI 챗봇 시작하기
+              </router-link>
+            </template>
           </div>
           <div class="col-lg-6">
             <div class="chatbot-preview">

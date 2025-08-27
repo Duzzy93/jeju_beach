@@ -66,8 +66,20 @@ const router = createRouter({
 })
 
 // 라우터 가드
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
+  
+  // 토큰이 있지만 사용자 정보가 로드되지 않은 경우 로드
+  if (authStore.token && !authStore.user) {
+    try {
+      await authStore.loadUserProfile()
+    } catch (error) {
+      console.error('사용자 정보 로드 실패:', error)
+      authStore.logout()
+      next('/login')
+      return
+    }
+  }
   
   // 인증이 필요한 페이지
   if (to.meta.requiresAuth && !authStore.isLoggedIn) {

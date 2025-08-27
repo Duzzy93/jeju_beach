@@ -117,6 +117,9 @@
 </template>
 
 <script>
+import { userApi } from '../api/userApi'
+import { beachApi } from '../api/beachApi'
+
 export default {
   name: 'BeachCrowdPage',
   data() {
@@ -156,20 +159,9 @@ export default {
           return;
         }
         
-        const response = await fetch('http://localhost:8080/api/user/role', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          this.userRole = data.role;
-          console.log('사용자 권한:', this.userRole);
-        } else {
-          console.error('사용자 권한 페칭 실패:', response.status);
-          this.userRole = 'USER'; // 기본값
-        }
+        const data = await userApi.getUserRole();
+        this.userRole = data.role;
+        console.log('사용자 권한:', this.userRole);
       } catch (error) {
         console.error('사용자 권한 페칭 중 오류:', error);
         this.userRole = 'USER'; // 기본값
@@ -188,72 +180,43 @@ export default {
         }
         
         console.log('해변 정보를 가져오는 중...');
-        const response = await fetch('http://localhost:8080/api/user/beaches', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
+        const beaches = await userApi.getAccessibleBeaches();
+        console.log('API에서 받은 해변 데이터:', beaches);
         
-        console.log('API 응답 상태:', response.status);
-        console.log('API 응답 헤더:', response.headers);
+        // 각 해변에 혼잡도 데이터 초기화
+        this.accessibleBeaches = beaches.map(beach => ({
+          ...beach,
+          currentCount: 0,
+          uniqueCount: 0,
+          fallenCount: 0,
+          density: 'low'
+        }));
+        this.loading = false;
+        console.log('처리된 해변 정보:', this.accessibleBeaches);
         
-        if (response.ok) {
-          const beaches = await response.json();
-          console.log('API에서 받은 해변 데이터:', beaches);
-          
-          // 각 해변에 혼잡도 데이터 초기화
-          this.accessibleBeaches = beaches.map(beach => ({
+        // WebSocket 연결
+        this.connectWebSocket();
+      } catch (error) {
+        console.error('접근 가능한 해변 페칭 중 오류:', error);
+        console.error('오류 상세 정보:', error.message);
+        
+        // fallback으로 모든 해변 정보를 가져와보기
+        console.log('fallback으로 모든 해변 정보를 가져오는 중...');
+        try {
+          const allBeaches = await beachApi.getAllBeaches();
+          console.log('fallback 해변 데이터:', allBeaches);
+          this.accessibleBeaches = allBeaches.map(beach => ({
             ...beach,
             currentCount: 0,
             uniqueCount: 0,
             fallenCount: 0,
             density: 'low'
           }));
-          this.loading = false;
-          console.log('처리된 해변 정보:', this.accessibleBeaches);
-          
-          // WebSocket 연결
-          this.connectWebSocket();
-        } else {
-          console.error('접근 가능한 해변 페칭 실패:', response.status);
-          const errorText = await response.text();
-          console.error('오류 응답 내용:', errorText);
-          
-          // fallback으로 모든 해변 정보를 가져와보기
-          console.log('fallback으로 모든 해변 정보를 가져오는 중...');
-          try {
-            const fallbackResponse = await fetch('http://localhost:8080/api/beaches', {
-              headers: {
-                'Content-Type': 'application/json'
-              }
-            });
-            
-            if (fallbackResponse.ok) {
-              const allBeaches = await fallbackResponse.json();
-              console.log('fallback 해변 데이터:', allBeaches);
-              this.accessibleBeaches = allBeaches.map(beach => ({
-                ...beach,
-                currentCount: 0,
-                uniqueCount: 0,
-                fallenCount: 0,
-                density: 'low'
-              }));
-            } else {
-              console.error('fallback API도 실패:', fallbackResponse.status);
-              this.accessibleBeaches = this.getDefaultBeaches();
-            }
-          } catch (fallbackError) {
-            console.error('fallback API 호출 중 오류:', fallbackError);
-            this.accessibleBeaches = this.getDefaultBeaches();
-          }
-          
-          this.loading = false;
+        } catch (fallbackError) {
+          console.error('fallback API 호출 중 오류:', fallbackError);
+          this.accessibleBeaches = this.getDefaultBeaches();
         }
-      } catch (error) {
-        console.error('접근 가능한 해변 페칭 중 오류:', error);
-        console.error('오류 상세 정보:', error.message);
-        this.accessibleBeaches = this.getDefaultBeaches();
+        
         this.loading = false;
       }
     },

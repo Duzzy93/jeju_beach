@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -133,12 +134,14 @@ public class BeachController {
     }
 
     @PostMapping
-    @Operation(summary = "해변 생성", description = "새로운 해변을 등록합니다.")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "해변 생성", description = "새로운 해변을 등록합니다. (최고관리자만)")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "생성 성공",
             content = @Content(schema = @Schema(implementation = Beach.class))),
         @ApiResponse(responseCode = "400", description = "잘못된 요청 데이터"),
-        @ApiResponse(responseCode = "401", description = "인증 필요")
+        @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "403", description = "권한 부족")
     })
     public ResponseEntity<Beach> createBeach(
             @Parameter(description = "해변 생성 정보", required = true)
@@ -149,12 +152,14 @@ public class BeachController {
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "해변 수정", description = "기존 해변 정보를 수정합니다.")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "해변 수정", description = "기존 해변 정보를 수정합니다. (최고관리자만)")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "수정 성공",
             content = @Content(schema = @Schema(implementation = Beach.class))),
         @ApiResponse(responseCode = "400", description = "잘못된 요청 데이터"),
         @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "403", description = "권한 부족"),
         @ApiResponse(responseCode = "404", description = "해변을 찾을 수 없음")
     })
     public ResponseEntity<Beach> updateBeach(
@@ -168,10 +173,12 @@ public class BeachController {
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "해변 삭제", description = "해변을 삭제합니다.")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "해변 삭제", description = "해변을 삭제합니다. (최고관리자만)")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "204", description = "삭제 성공"),
         @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "403", description = "권한 부족"),
         @ApiResponse(responseCode = "404", description = "해변을 찾을 수 없음")
     })
     public ResponseEntity<Void> deleteBeach(
@@ -183,11 +190,13 @@ public class BeachController {
     }
 
     @PatchMapping("/{id}/toggle-status")
-    @Operation(summary = "해변 상태 변경", description = "해변의 활성/비활성 상태를 토글합니다.")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "해변 상태 변경", description = "해변의 활성/비활성 상태를 토글합니다. (최고관리자만)")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "상태 변경 성공",
             content = @Content(schema = @Schema(implementation = Beach.class))),
         @ApiResponse(responseCode = "401", description = "인증 필요"),
+        @ApiResponse(responseCode = "403", description = "권한 부족"),
         @ApiResponse(responseCode = "404", description = "해변을 찾을 수 없음")
     })
     public ResponseEntity<Beach> toggleBeachStatus(

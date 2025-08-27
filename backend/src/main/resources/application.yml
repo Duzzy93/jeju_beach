@@ -45,7 +45,7 @@ openai:
 
 # JWT 설정
 jwt:
-  secret: jejuBeachSecretKey2024ForJWTTokenGeneration
+  secret: ZWp1QmVhY2hTZWNyZXRLZXkyMDI0Rm9ySldUVG9rZW5HZW5lcmF0aW9uV2l0aExvbmdlclNlY3JldEtleUZvckJldHRlclNlY3VyaXR5
   expiration: 86400000 # 24시간 (밀리초)
 
 # 로깅 설정

@@ -62,6 +62,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         } catch (Exception e) {
             // JWT 토큰이 유효하지 않은 경우 로그만 남기고 계속 진행
             // 인증이 필요한 엔드포인트는 Spring Security가 처리
+            System.err.println("JWT 토큰 처리 중 오류 발생: " + e.getMessage());
         }
         
         filterChain.doFilter(request, response);

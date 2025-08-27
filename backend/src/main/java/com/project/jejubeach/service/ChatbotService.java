@@ -31,38 +31,32 @@ public class ChatbotService {
 
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
-    private final String openaiApiKey;
+    private String openaiApiKey;
 
-    // 해변 정보 데이터
+    // 해변 정보 데이터 (토큰 사용량 최적화)
     private static final String BEACH_SYSTEM_PROMPT = """
-        당신은 제주도 해변 전문 가이드입니다. 
-        다음 정보를 바탕으로 사용자의 질문에 친절하고 정확하게 답변해주세요:
-
-        해변 정보:
-        - 함덕해변: 제주도 동부의 대표적인 해변, 맑은 바다와 백사장
-        - 이호해변: 공항 근처에 위치해 접근성이 좋은 평화로운 해변  
-        - 월정리해변: 맑은 바다와 카페 거리로 유명한 해변
-
-        혼잡도 정보:
-        - 낮음: 5명 미만
-        - 중간: 5-15명
-        - 높음: 15명 이상
-
-        항상 한국어로 답변하고, 제주도 해변에 대한 구체적이고 유용한 정보를 제공해주세요.
-        사용자가 해변 선택에 어려움을 겪고 있다면 개인적 취향을 물어보고 맞춤형 추천을 해주세요.
+        제주도 해변 가이드. 함덕해변(동부, 맑은 바다), 이호해변(서부, 공항근처), 월정리해변(동부, 카페거리). 
+        혼잡도: 낮음(5명미만), 중간(5-15명), 높음(15명이상). 
+        한국어로 간단명료하게 답변. 100자 이내로 답변.
         """;
 
     @Autowired
-    public ChatbotService(String openaiApiKey) {
-        this.openaiApiKey = openaiApiKey;
+    public ChatbotService() {
+        // 시스템 프로퍼티에서 API 키를 가져오거나 기본값 사용
+        this.openaiApiKey = System.getProperty("OPENAI_API_KEY");
         this.restTemplate = new RestTemplate();
         this.objectMapper = new ObjectMapper();
         
-        // API 키 상태 로깅
-        if (this.openaiApiKey != null && !this.openaiApiKey.trim().isEmpty()) {
-            logger.info("✅ ChatbotService 초기화 완료 - API 키 설정됨");
+        // API 키 상태 로깅 및 상세 정보
+        if (this.openaiApiKey != null && !this.openaiApiKey.trim().isEmpty() && 
+            !this.openaiApiKey.equals("your_openai_api_key_here")) {
+            logger.info("✅ ChatbotService 초기화 완료 - 시스템 프로퍼티에서 API 키 로드됨");
+            logger.debug("API 키 확인: {}...", this.openaiApiKey.substring(0, Math.min(10, this.openaiApiKey.length())));
         } else {
-            logger.error("❌ ChatbotService 초기화 실패 - API 키가 설정되지 않음");
+            logger.warn("⚠️ ChatbotService 초기화 완료 - API 키가 설정되지 않음 (기본 정보만 제공)");
+            logger.info("시스템 프로퍼티 OPENAI_API_KEY를 설정해주세요.");
+            logger.info("현재 API 키 값: {}", this.openaiApiKey);
+            this.openaiApiKey = null;
         }
     }
 
@@ -77,11 +71,11 @@ public class ChatbotService {
             logger.info("OpenAI API 호출 시작 - 메시지: {}", request.getMessage());
             logger.debug("API 키 확인: {}", openaiApiKey.substring(0, Math.min(10, openaiApiKey.length())) + "...");
 
-            // OpenAI API 요청 구성
+            // OpenAI API 요청 구성 (토큰 사용량 최적화)
             ObjectNode requestBody = objectMapper.createObjectNode();
             requestBody.put("model", "gpt-3.5-turbo");
-            requestBody.put("max_tokens", 1000);
-            requestBody.put("temperature", 0.7);
+            requestBody.put("max_tokens", 150);  // 1000 → 150으로 대폭 감소
+            requestBody.put("temperature", 0.3);  // 0.7 → 0.3으로 감소 (더 일관된 응답)
 
             // 메시지 배열 구성
             ArrayNode messages = objectMapper.createArrayNode();
@@ -92,10 +86,10 @@ public class ChatbotService {
             systemMessage.put("content", BEACH_SYSTEM_PROMPT);
             messages.add(systemMessage);
 
-            // 대화 히스토리 추가 (최근 5개만)
+            // 대화 히스토리 추가 (최근 2개만 - 토큰 사용량 최적화)
             List<ChatMessage> recentHistory = request.getConversationHistory();
             if (recentHistory != null && !recentHistory.isEmpty()) {
-                int startIndex = Math.max(0, recentHistory.size() - 5);
+                int startIndex = Math.max(0, recentHistory.size() - 2);  // 5개 → 2개로 감소
                 for (int i = startIndex; i < recentHistory.size(); i++) {
                     ChatMessage msg = recentHistory.get(i);
                     ObjectNode historyMessage = objectMapper.createObjectNode();
@@ -170,9 +164,11 @@ public class ChatbotService {
         };
 
         for (String question : quickQuestions) {
-            questions.add(new ChatMessage("user", question));
+            ChatMessage chatMessage = new ChatMessage("user", question);
+            questions.add(chatMessage);
         }
 
+        logger.info("빠른 질문 목록 생성 완료: {}개", questions.size());
         return questions;
     }
 

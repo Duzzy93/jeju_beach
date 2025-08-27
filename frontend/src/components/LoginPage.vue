@@ -29,8 +29,8 @@
         </div>
         
         <div class="d-grid gap-2">
-          <button type="submit" class="btn btn-primary" :disabled="loading">
-            {{ loading ? '로그인 중...' : '로그인' }}
+          <button type="submit" class="btn btn-primary" :disabled="authStore.loading">
+            {{ authStore.loading ? '로그인 중...' : '로그인' }}
           </button>
         </div>
       </form>
@@ -39,8 +39,14 @@
         <p>계정이 없으신가요? <a href="#" @click.prevent="showRegister = true">회원가입</a></p>
       </div>
       
-      <div v-if="message" :class="['alert', messageType === 'success' ? 'alert-success' : 'alert-danger']">
-        {{ message }}
+      <!-- 에러 메시지 표시 -->
+      <div v-if="authStore.error" class="alert alert-danger mt-3">
+        {{ authStore.error }}
+      </div>
+      
+      <!-- 성공 메시지 표시 -->
+      <div v-if="successMessage" class="alert alert-success mt-3">
+        {{ successMessage }}
       </div>
     </div>
     
@@ -96,8 +102,8 @@
           
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" @click="showRegister = false">취소</button>
-            <button type="submit" class="btn btn-primary" :disabled="registerLoading">
-              {{ registerLoading ? '가입 중...' : '회원가입' }}
+            <button type="submit" class="btn btn-primary" :disabled="authStore.loading">
+              {{ authStore.loading ? '가입 중...' : '회원가입' }}
             </button>
           </div>
         </form>
@@ -108,6 +114,7 @@
 
 <script>
 import { useAuthStore } from '../stores/auth'
+import { useRouter } from 'vue-router'
 
 export default {
   name: 'LoginPage',
@@ -122,102 +129,53 @@ export default {
         email: '',
         password: ''
       },
-      loading: false,
-      registerLoading: false,
       showRegister: false,
-      message: '',
-      messageType: 'success'
+      successMessage: ''
+    }
+  },
+  setup() {
+    const router = useRouter()
+    return { router }
+  },
+  computed: {
+    authStore() {
+      return useAuthStore()
     }
   },
   methods: {
     async handleLogin() {
-      this.loading = true;
-      this.message = '';
+      this.authStore.clearError()
+      this.successMessage = ''
       
-      try {
-        const response = await fetch('http://localhost:8080/api/auth/login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(this.loginForm)
-        });
+      const result = await this.authStore.login(this.loginForm)
+      
+      if (result.success) {
+        this.successMessage = result.data.message || '로그인이 완료되었습니다'
         
-        const data = await response.json();
-        
-        if (response.ok && data.token) {
-          // Pinia 스토어에 인증 정보 저장
-          const authStore = useAuthStore();
-          authStore.setAuth({
-            token: data.token,
-            username: data.username,
-            role: data.role,
-            email: data.email
-          });
-          
-          this.message = data.message || '로그인이 완료되었습니다';
-          this.messageType = 'success';
-          
-          // 로그인 성공 후 홈페이지로 이동
-          setTimeout(() => {
-            this.$router.push('/');
-          }, 1500);
-        } else {
-          // 토큰이 없거나 응답이 실패인 경우
-          this.message = data.message || '사용자명 또는 비밀번호가 올바르지 않습니다';
-          this.messageType = 'danger';
-          
-          // 폼 초기화
-          this.loginForm.password = '';
-          
-          // 로그인 실패 시 현재 페이지에 머물러 있음
-          console.log('로그인 실패 - 페이지 이동 차단됨');
-        }
-      } catch (error) {
-        console.error('로그인 에러:', error);
-        this.message = '서버 연결에 실패했습니다. 다시 시도해주세요.';
-        this.messageType = 'danger';
-        
-        // 에러 발생 시에도 현재 페이지에 머물러 있음
-        console.log('로그인 에러 - 페이지 이동 차단됨');
-      } finally {
-        this.loading = false;
+        // 로그인 성공 후 홈페이지로 이동
+        setTimeout(() => {
+          this.router.push('/')
+        }, 1500)
+      } else {
+        // 로그인 실패 시 비밀번호 초기화
+        this.loginForm.password = ''
       }
     },
     
     async handleRegister() {
-      this.registerLoading = true;
-      this.message = '';
+      this.authStore.clearError()
+      this.successMessage = ''
       
-      try {
-        const response = await fetch('http://localhost:8080/api/auth/register', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(this.registerForm)
-        });
+      const result = await this.authStore.register(this.registerForm)
+      
+      if (result.success) {
+        this.successMessage = result.data.message || '회원가입이 완료되었습니다'
         
-        const data = await response.json();
-        
-        if (response.ok) {
-          this.message = data.message;
-          this.messageType = 'success';
-          
-          // 회원가입 성공 후 로그인 폼으로 이동
-          setTimeout(() => {
-            this.showRegister = false;
-            this.registerForm = { username: '', email: '', password: '' };
-          }, 1000);
-        } else {
-          this.message = data.message || '회원가입에 실패했습니다';
-          this.messageType = 'danger';
-        }
-      } catch (error) {
-        this.message = '서버 연결에 실패했습니다';
-        this.messageType = 'danger';
-      } finally {
-        this.registerLoading = false;
+        // 회원가입 성공 후 로그인 폼으로 이동
+        setTimeout(() => {
+          this.showRegister = false
+          this.registerForm = { username: '', email: '', password: '' }
+        }, 1000)
       }
     }
   }

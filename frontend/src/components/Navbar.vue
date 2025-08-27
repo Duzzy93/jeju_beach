@@ -52,9 +52,6 @@
             <li class="nav-item">
               <router-link class="nav-link" to="/">홈</router-link>
             </li>
-            <li class="nav-item">
-              <router-link class="nav-link" to="/chatbot">AI 챗봇</router-link>
-            </li>
           </template>
         </ul>
 

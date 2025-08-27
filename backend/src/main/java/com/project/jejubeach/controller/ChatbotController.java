@@ -12,6 +12,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,6 +25,8 @@ import java.util.List;
 @RequiredArgsConstructor
 @Tag(name = "AI 챗봇", description = "OpenAI 기반 챗봇 서비스 API")
 public class ChatbotController {
+
+    private static final Logger logger = LoggerFactory.getLogger(ChatbotController.class);
 
     private final ChatbotService chatbotService;
 
@@ -54,9 +58,12 @@ public class ChatbotController {
     })
     public ResponseEntity<List<ChatMessage>> getQuickQuestions() {
         try {
+            logger.info("빠른 질문 목록 요청 받음");
             List<ChatMessage> questions = chatbotService.getQuickQuestions();
+            logger.info("빠른 질문 목록 반환: {}개", questions.size());
             return ResponseEntity.ok(questions);
         } catch (Exception e) {
+            logger.error("빠른 질문 목록 조회 실패", e);
             return ResponseEntity.badRequest().build();
         }
     }
