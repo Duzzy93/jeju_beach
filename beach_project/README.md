@@ -1,174 +1,178 @@
-# 🏖️ 제주 해변 AI 모델
+# 제주 해변 AI 탐지 모델
 
-Spring Boot 백엔드에서 자동으로 실행되는 AI 모델로, 제주 해변의 실시간 혼잡도를 분석하고 탐지 데이터를 백엔드로 전송합니다.
+이 프로젝트는 YOLO + DeepSORT를 사용하여 해변의 혼잡도와 쓰러진 사람을 실시간으로 탐지하는 AI 모델입니다.
 
 ## 🚀 주요 기능
 
-- **실시간 사람 탐지**: YOLOv8을 사용한 고정밀 사람 탐지
-- **쓰러짐 감지**: DeepSORT를 활용한 쓰러짐 상황 실시간 감지
-- **백엔드 자동 연동**: Spring Boot 백엔드에서 자동 실행 및 데이터 전송
-- **Windows 호환성**: Windows 환경에서의 인코딩 문제 해결
+- **실시간 사람 탐지**: YOLO v8을 사용한 정확한 사람 탐지
+- **중복 카운트 방지**: DeepSORT를 통한 개별 ID 추적
+- **쓰러진 사람 탐지**: 박스 비율 분석을 통한 쓰러짐 판정
+- **해변별 분석**: 함덕, 이호, 월정리 해변의 개별 분석
+- **백엔드 연동**: Spring Boot 백엔드로 탐지 데이터 자동 전송
 
-## 📋 시스템 요구사항
+## 📋 요구사항
 
 - Python 3.8+
 - CUDA 지원 GPU (선택사항, CPU에서도 동작)
-- 최소 8GB RAM
-- 웹캠 또는 동영상 파일
+- Spring Boot 백엔드 서버 실행 중
 
-## 🛠️ 설치 방법
+## 🛠️ 설치
 
-### 1. 저장소 클론
-```bash
-git clone <repository-url>
-cd beach_project
-```
+### 1. 의존성 설치
 
-### 2. 가상환경 생성 및 활성화
-```bash
-# Windows
-python -m venv venv
-venv\Scripts\activate
-
-# Linux/Mac
-python3 -m venv venv
-source venv/bin/activate
-```
-
-### 3. 필요한 패키지 설치
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. YOLOv8 모델 다운로드
-```bash
-# YOLOv8n 모델이 자동으로 다운로드됩니다
-# 또는 수동으로 다운로드:
-wget https://github.com/ultralytics/assets/releases/download/v0.0.0/yolov8n.pt
-```
+### 2. YOLO 가중치 파일
 
-## 🔧 환경 설정
+- `yolov8n.pt` 파일이 `beach_project` 디렉토리에 있어야 합니다
+- 자동으로 다운로드되지만, 수동으로 다운로드할 수도 있습니다
 
-### 환경변수 설정
+### 3. 비디오 파일
 
-```bash
-# Windows
-set BACKEND_URL=http://localhost:8080
-set ANALYSIS_INTERVAL=30
+- `../backend/videos/` 디렉토리에 해변 비디오 파일들이 있어야 합니다:
+  - `hamduck_beach.mp4`
+  - `iho_beach.mp4`
+  - `walljeonglee_beach.mp4`
 
-# Linux/Mac
-export BACKEND_URL=http://localhost:8080
-export ANALYSIS_INTERVAL=30
-```
-
-### 설정 가능한 환경변수
-
-| 변수명 | 기본값 | 설명 |
-|--------|--------|------|
-| `BACKEND_URL` | `http://localhost:8080` | 백엔드 API 서버 URL |
-| `ANALYSIS_INTERVAL` | `30` | 해변 분석 간격 (초) |
-| `YOLO_WEIGHTS` | `yolov8n.pt` | YOLO 모델 가중치 파일 경로 |
-| `YOLO_CONF` | `0.35` | YOLO 탐지 신뢰도 임계값 |
-| `YOLO_IOU` | `0.5` | YOLO IoU 임계값 |
-| `FALL_RATIO` | `1.8` | 쓰러짐 판정 비율 임계값 |
-
-## 🚀 실행 방법
-
-### 자동 실행 (권장)
-Spring Boot 백엔드가 시작되면 자동으로 AI 모델이 실행됩니다.
+## 🎯 사용법
 
 ### 수동 실행
+
 ```bash
-# Windows 환경에서 실행
+cd beach_project
 python simple_detection_windows.py
 ```
 
-### 백엔드에서 AI 모델 제어
-- **시작**: `POST /api/ai-model/start`
-- **중지**: `POST /api/ai-model/stop`
-- **재시작**: `POST /api/ai-model/restart`
-- **상태 확인**: `GET /api/ai-model/status`
+## ⚙️ 환경 변수 설정
 
-## 📊 출력 데이터 형식
+| 변수명 | 기본값 | 설명 |
+|--------|--------|------|
+| `BACKEND_URL` | `http://localhost:8080` | 백엔드 서버 URL |
+| `ANALYSIS_INTERVAL` | `30` | 분석 간격 (초) |
+| `YOLO_CONF` | `0.35` | YOLO 신뢰도 임계값 |
+| `YOLO_IOU` | `0.5` | YOLO IOU 임계값 |
+| `YOLO_IMGSZ` | `640` | YOLO 입력 이미지 크기 |
+| `FALL_RATIO` | `1.8` | 쓰러짐 판정 비율 임계값 |
+| `FALL_MAX_HEIGHT_RATIO` | `0.35` | 쓰러짐 판정 높이 비율 |
 
-### 탐지 결과 JSON
+## 🔧 설정 조정
+
+### 성능 최적화
+
+- **CPU 사용 시**: `YOLO_IMGSZ`를 320으로 낮춤
+- **GPU 사용 시**: `YOLO_IMGSZ`를 960으로 높임
+- **실시간 처리**: `ANALYSIS_INTERVAL`을 10초로 설정
+
+### 정확도 조정
+
+- **높은 정확도**: `YOLO_CONF`를 0.5로 높임
+- **낮은 정확도**: `YOLO_CONF`를 0.25로 낮춤
+- **쓰러짐 탐지**: `FALL_RATIO`를 1.5로 조정
+
+## 📊 출력 데이터
+
+### 탐지 결과
+
 ```json
 {
-  "beach_name": "함덕해변",
-  "person_count": 15,
-  "unique_person_count": 23,
-  "fallen_count": 0,
-  "density_level": "중간",
-  "timestamp": 1703123456.789,
-  "stats": {
-    "unique_person_count": 23,
-    "last_visible_count": 15,
-    "last_fallen_visible": 0,
-    "total_fall_alerts": 0
-  }
-}
-```
-
-### 백엔드 전송 데이터
-```json
-{
-  "personCount": 15,
-  "fallenCount": 0,
+  "personCount": 25,
+  "fallenCount": 1,
   "source": "hamduck_camera_01"
 }
 ```
 
-## 🔍 문제 해결
+### 로그 예시
 
-### 1. 백엔드 연결 실패
-- 백엔드 서버가 실행 중인지 확인
-- `BACKEND_URL` 환경변수 확인
-- 방화벽 설정 확인
-
-### 2. 동영상 파일을 찾을 수 없음
-- 동영상 파일 경로 확인
-- `../backend/videos/` 디렉토리에 동영상 파일 존재 확인
-
-### 3. GPU 메모리 부족
-- `YOLO_IMGSZ` 값을 줄이기 (기본값: 960 → 640)
-- `YOLO_WEIGHTS`를 `yolov8n.pt`로 변경
-
-### 4. 탐지 정확도 향상
-- `YOLO_CONF` 값을 조정 (0.3 ~ 0.7)
-- `YOLO_IOU` 값을 조정 (0.3 ~ 0.7)
-- `FALL_RATIO` 값을 조정 (1.5 ~ 2.2)
-
-## 📝 로그 파일
-
-실행 중 생성되는 로그 파일:
-- `beach_detection.log`: 상세한 분석 로그
-- 콘솔 출력: 실시간 상태 정보
-
-## 🔄 백엔드 연동
-
-### API 엔드포인트
-- `POST /api/detections`: 탐지 데이터 저장
-- `GET /api/detections/latest`: 최신 탐지 데이터 조회
-- `GET /api/detections/beach/{beachName}/latest`: 해변별 최신 탐지 데이터
-
-### 데이터 흐름
 ```
-Spring Boot 시작 → AI 모델 자동 실행 → 탐지 데이터 생성 → 
-백엔드 API 전송 → 데이터베이스 저장 → 프론트엔드 실시간 업데이트
+[INFO] Hamduck Beach 분석 중...
+[INFO] Hamduck Beach: 총 150프레임, 30.0 FPS
+[INFO] Hamduck Beach: 진행률 10.0% (10프레임 처리)
+[INFO] Hamduck Beach: 평균 25명, 쓰러진 사람 1명
+[SUCCESS] Hamduck Beach 데이터 전송 성공
+   - 사람 수: 25, 쓰러진 사람: 1
 ```
 
-### 파일 구조
-```
-beach_project/
-├── simple_detection_windows.py  # Windows용 AI 모델 (메인)
-├── requirements.txt             # Python 의존성
-├── yolov8n.pt                  # YOLO 모델 파일
-└── README.md                   # 이 파일
-```
+## 🚨 문제 해결
 
-## 📞 지원
+### 일반적인 오류
 
-문제가 발생하거나 개선 사항이 있으면 이슈를 등록해 주세요.
+1. **모델 초기화 실패**
+   - `pip install -r requirements.txt` 실행
+   - GPU 드라이버 업데이트 (GPU 사용 시)
+
+2. **비디오 파일을 찾을 수 없음**
+   - 비디오 파일 경로 확인
+   - 파일 권한 확인
+
+3. **백엔드 연결 실패**
+   - Spring Boot 서버 실행 상태 확인
+   - 포트 8080 사용 가능 여부 확인
+
+4. **ModuleNotFoundError: No module named 'cv2'**
+   - 가상환경이 활성화되어 있는지 확인
+   - `set_ai_environment.bat` (Windows) 또는 `set_ai_environment.sh` (Linux/Mac) 실행
+   - 또는 환경 변수 `AI_PYTHON_PATH`를 가상환경 Python 경로로 설정
+
+### 성능 문제
+
+1. **느린 처리 속도**
+   - `YOLO_IMGSZ`를 320으로 낮춤
+   - `FRAME_STRIDE`를 높여서 처리할 프레임 수 줄임
+
+2. **메모리 부족**
+   - `YOLO_IMGSZ`를 낮춤
+   - `max_age` 값을 낮춤
+
+## 🔗 API 연동
+
+### 탐지 데이터 전송
+
+- **엔드포인트**: `POST /api/detections`
+- **데이터 형식**: JSON
+- **자동 전송**: 30초마다 각 해변의 분석 결과 전송
+
+### 백엔드 상태 확인
+
+- **엔드포인트**: `GET /api/ai-model/status`
+- **용도**: 백엔드 서버 연결 상태 확인
+
+### 실시간 데이터 수신
+
+- **WebSocket**: `ws://localhost:8080/ws/detections`
+- **폴링 폴백**: 5초마다 API 호출로 최신 데이터 조회
+- **데이터 형식**: 
+  ```json
+  {
+    "type": "DETECTION_UPDATE",
+    "beachName": "hamduck",
+    "detection": {
+      "personCount": 25,
+      "fallenCount": 1,
+      "source": "hamduck_camera_01"
+    }
+  }
+  ```
+
+## 📈 모니터링
+
+### 실시간 로그
+
+- 진행률 표시
+- 탐지 결과 요약
+- 오류 및 경고 메시지
+
+### 성능 지표
+
+- 처리된 프레임 수
+- 탐지된 사람 수
+- 쓰러진 사람 수
+- API 전송 상태
+
+## 🤝 기여
+
+버그 리포트나 기능 제안은 이슈로 등록해 주세요.
 
 ## 📄 라이선스
 

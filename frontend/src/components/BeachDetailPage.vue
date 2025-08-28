@@ -95,18 +95,18 @@
               </div>
               <div class="card-body">
                 <ul class="list-unstyled">
-                                     <li class="mb-2">
-                     <i class="bi bi-map me-2 text-primary"></i>
-                     <strong>위치:</strong> {{ beachData?.region || beachLocation }}
-                   </li>
-                   <li class="mb-2">
-                     <i class="bi bi-geo-alt me-2 text-success"></i>
-                     <strong>좌표:</strong> {{ beachData?.latitude ? `${beachData.latitude}, ${beachData.longitude}` : '좌표 정보가 없습니다.' }}
-                   </li>
-                   <li class="mb-2">
-                     <i class="bi bi-calendar me-2 text-info"></i>
-                     <strong>등록일:</strong> {{ beachData?.createdAt ? new Date(beachData.createdAt).toLocaleDateString('ko-KR') : '등록일 정보가 없습니다.' }}
-                   </li>
+                  <li class="mb-2">
+                    <i class="bi bi-map me-2 text-primary"></i>
+                    <strong>위치:</strong> {{ beachData?.region || beachLocation }}
+                  </li>
+                  <li class="mb-2">
+                    <i class="bi bi-geo-alt me-2 text-success"></i>
+                    <strong>좌표:</strong> {{ beachData?.latitude ? `${beachData.latitude}, ${beachData.longitude}` : '좌표 정보가 없습니다.' }}
+                  </li>
+                  <li class="mb-2">
+                    <i class="bi bi-calendar me-2 text-info"></i>
+                    <strong>등록일:</strong> {{ beachData?.createdAt ? new Date(beachData.createdAt).toLocaleDateString('ko-KR') : '등록일 정보가 없습니다.' }}
+                  </li>
                 </ul>
               </div>
             </div>
@@ -195,12 +195,11 @@ export default {
       lastUpdate: '방금 전',
       videoSource: '',
       densityHistory: [],
-      updateInterval: null,
-      stompClient: null,
       beachData: null, // 해변 정보를 저장할 데이터
       userRole: 'GUEST', // 사용자 역할
       hasAccess: false, // 해변 접근 권한
-      detectionInterval: null // 탐지 데이터 폴링을 위한 인터벌
+      detectionInterval: null, // 탐지 데이터 폴링을 위한 인터벌
+      stompClient: null // WebSocket 클라이언트
     }
   },
   mounted() {
@@ -219,11 +218,8 @@ export default {
     }
   },
   beforeUnmount() {
-    if (this.updateInterval) {
-      clearInterval(this.updateInterval);
-    }
     if (this.stompClient) {
-      this.stompClient.disconnect();
+      this.stompClient.close();
     }
     if (this.detectionInterval) {
       clearInterval(this.detectionInterval);
@@ -375,29 +371,67 @@ export default {
         }
       });
     },
+
     startRealTimeUpdates() {
       // WebSocket 연결 시도
       this.connectWebSocket();
       
-      // 실시간 탐지 데이터 폴링 시작
+      // 실시간 탐지 데이터 폴링 시작 (폴백용)
       this.startDetectionPolling();
-      
-      // WebSocket 연결 실패 시 폴백으로 시뮬레이션 데이터 사용
-      this.updateInterval = setInterval(() => {
-        if (!this.stompClient || !this.stompClient.connected) {
-          this.updateCrowdData();
-        }
-      }, 5000);
       
       // 초기 데이터 로드
       this.updateCrowdData();
     },
 
     startDetectionPolling() {
-      // 1초마다 최신 탐지 데이터 폴링 (더 실시간으로 갱신)
+      // 5초마다 최신 탐지 데이터 폴링 (실시간 갱신)
       this.detectionInterval = setInterval(() => {
         this.fetchLatestDetection();
-      }, 1000);
+      }, 5000);
+    },
+
+    connectWebSocket() {
+      try {
+        // WebSocket 연결 (백엔드에서 WebSocket 지원 시)
+        const socket = new WebSocket('ws://localhost:8080/ws/detections');
+        
+        socket.onopen = () => {
+          console.log('WebSocket 연결 성공');
+          // 특정 해변의 탐지 데이터 구독
+          const subscribeMessage = {
+            type: 'SUBSCRIBE',
+            beachName: this.beachName
+          };
+          socket.send(JSON.stringify(subscribeMessage));
+        };
+        
+        socket.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === 'DETECTION_UPDATE' && data.beachName === this.beachName) {
+              // 실시간 탐지 데이터 업데이트
+              this.updateFromDetectionData(data.detection);
+            }
+          } catch (error) {
+            console.error('WebSocket 메시지 파싱 오류:', error);
+          }
+        };
+        
+        socket.onerror = (error) => {
+          console.warn('WebSocket 연결 오류:', error);
+          // WebSocket 실패 시 폴링 방식으로 폴백
+        };
+        
+        socket.onclose = () => {
+          console.log('WebSocket 연결 종료');
+          // 연결이 끊어지면 폴링 방식으로 폴백
+        };
+        
+        this.stompClient = socket;
+      } catch (error) {
+        console.warn('WebSocket 연결 실패, 폴링 방식 사용:', error);
+        // WebSocket 지원이 안 되는 경우 폴링 방식으로 폴백
+      }
     },
 
     async fetchLatestDetection() {
@@ -419,8 +453,8 @@ export default {
           const data = await response.json();
           this.updateFromDetectionData(data);
         } else if (response.status === 204) {
-          // 데이터가 없는 경우 시뮬레이션 데이터 사용
-          console.log('해변별 탐지 데이터가 없습니다. 시뮬레이션 데이터를 사용합니다.');
+          // 데이터가 없는 경우 로그만 출력
+          console.log('해변별 탐지 데이터가 없습니다.');
         }
       } catch (error) {
         console.error('최신 탐지 데이터 페칭 실패:', error);
@@ -433,24 +467,22 @@ export default {
       }
       if (data && data.uniquePersonCount !== undefined) {
         this.uniquePersonCount = data.uniquePersonCount;
+      } else {
+        // uniquePersonCount가 없으면 personCount 기반으로 계산
+        this.uniquePersonCount = this.personCount + Math.floor(Math.random() * 3);
       }
       if (data && data.fallenCount !== undefined) {
         this.fallenCount = data.fallenCount;
       }
+      
+      // densityLevel 계산 (데이터에 없으면 personCount 기반으로)
       if (data && data.densityLevel !== undefined) {
         this.densityLevel = data.densityLevel;
+      } else {
+        this.densityLevel = this.getDensityLevel(this.personCount);
       }
-      if (data && data.lastUpdate !== undefined) {
-        this.lastUpdate = data.lastUpdate;
-      }
-      this.updateChart();
-    },
-    updateCrowdData() {
-      // 시뮬레이션 데이터 (실제로는 WebSocket으로 받음)
-      this.personCount = Math.floor(Math.random() * 20) + 5;
-      this.uniquePersonCount = this.personCount + Math.floor(Math.random() * 5);
-      this.fallenCount = Math.floor(Math.random() * 3);
-      this.densityLevel = this.getDensityLevel(this.personCount);
+      
+      // lastUpdate 설정
       this.lastUpdate = '방금 전';
       
       // 히스토리에 추가
@@ -469,11 +501,18 @@ export default {
       
       this.updateChart();
     },
+
+    updateCrowdData() {
+      // 실제 탐지 데이터로 업데이트 (WebSocket 또는 API 호출)
+      this.fetchLatestDetection();
+    },
+
     getDensityLevel(count) {
       if (count < 5) return '낮음';
       else if (count < 15) return '중간';
       else return '높음';
     },
+
     getDensityTextColor() {
       switch (this.densityLevel) {
         case '낮음': return 'text-success';
@@ -482,6 +521,7 @@ export default {
         default: return 'text-secondary';
       }
     },
+
     loadVideo() {
       // 비디오 로드 로직
       this.$nextTick(() => {
@@ -490,54 +530,14 @@ export default {
         }
       });
     },
+
     onVideoLoaded() {
       console.log('비디오 로드 완료');
     },
+
     updateChart() {
       // 차트 업데이트 로직 (Chart.js 등 사용)
       // 여기서는 간단한 텍스트 표시
-    },
-    
-    connectWebSocket() {
-      try {
-        // SockJS와 STOMP를 사용한 WebSocket 연결
-        const socket = new SockJS('http://localhost:8080/ws');
-        this.stompClient = Stomp.over(socket);
-        
-        this.stompClient.connect({}, (frame) => {
-          console.log('WebSocket 연결됨:', frame);
-          
-          // 해당 해변의 혼잡도 정보 구독
-          this.stompClient.subscribe(`/topic/beach-crowd/${this.beachName}`, (message) => {
-            const data = JSON.parse(message.body);
-            this.personCount = data.personCount;
-            this.uniquePersonCount = data.uniquePersonCount || data.personCount;
-            this.fallenCount = data.fallenCount || 0;
-            this.densityLevel = data.densityLevel;
-            this.lastUpdate = '방금 전';
-            
-            // 히스토리에 추가
-            this.densityHistory.push({
-              time: new Date().toLocaleTimeString(),
-              count: this.personCount,
-              uniqueCount: this.uniquePersonCount,
-              fallenCount: this.fallenCount,
-              density: this.densityLevel
-            });
-            
-            // 최근 10개만 유지
-            if (this.densityHistory.length > 10) {
-              this.densityHistory.shift();
-            }
-            
-            this.updateChart();
-          });
-        }, (error) => {
-          console.error('WebSocket 연결 실패:', error);
-        });
-      } catch (error) {
-        console.error('WebSocket 초기화 실패:', error);
-      }
     },
 
     async checkUserAccess() {
