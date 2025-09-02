@@ -29,9 +29,11 @@ public class ChatbotService {
     @Value("${openai.api.url:https://api.openai.com/v1/chat/completions}")
     private String openaiApiUrl;
 
+    @Value("${OPENAI_API_KEY:}")
+    private String openaiApiKey;
+
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
-    private String openaiApiKey;
 
     // 해변 정보 데이터 (토큰 사용량 최적화)
     private static final String BEACH_SYSTEM_PROMPT = """
@@ -42,19 +44,17 @@ public class ChatbotService {
 
     @Autowired
     public ChatbotService() {
-        // 시스템 프로퍼티에서 API 키를 가져오거나 기본값 사용
-        this.openaiApiKey = System.getProperty("OPENAI_API_KEY");
         this.restTemplate = new RestTemplate();
         this.objectMapper = new ObjectMapper();
         
         // API 키 상태 로깅 및 상세 정보
         if (this.openaiApiKey != null && !this.openaiApiKey.trim().isEmpty() && 
             !this.openaiApiKey.equals("your_openai_api_key_here")) {
-            logger.info("✅ ChatbotService 초기화 완료 - 시스템 프로퍼티에서 API 키 로드됨");
+            logger.info("✅ ChatbotService 초기화 완료 - 환경 변수에서 API 키 로드됨");
             logger.debug("API 키 확인: {}...", this.openaiApiKey.substring(0, Math.min(10, this.openaiApiKey.length())));
         } else {
             logger.warn("⚠️ ChatbotService 초기화 완료 - API 키가 설정되지 않음 (기본 정보만 제공)");
-            logger.info("시스템 프로퍼티 OPENAI_API_KEY를 설정해주세요.");
+            logger.info("환경 변수 OPENAI_API_KEY를 설정해주세요.");
             logger.info("현재 API 키 값: {}", this.openaiApiKey);
             this.openaiApiKey = null;
         }

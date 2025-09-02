@@ -5,20 +5,20 @@ spring:
   application:
     name: jeju-beach-backend
   profiles:
-    active: dev
+    active: prod
   datasource:
-    url: jdbc:mysql://localhost:3306/jeju_beach_db?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
-    username: root
-    password: 12345
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/jeju_beach_db?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8}
+    username: ${SPRING_DATASOURCE_USERNAME:root}
+    password: ${SPRING_DATASOURCE_PASSWORD:12345}
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
-        format_sql: true
+        format_sql: false
   web:
     resources:
       static-locations: classpath:/static/,file:./videos/
@@ -45,23 +45,23 @@ openai:
 
 # JWT 설정
 jwt:
-  secret: ZWp1QmVhY2hTZWNyZXRLZXkyMDI0Rm9ySldUVG9rZW5HZW5lcmF0aW9uV2l0aExvbmdlclNlY3JldEtleUZvckJldHRlclNlY3VyaXR5
-  expiration: 86400000 # 24시간 (밀리초)
+  secret: ${JWT_SECRET:ZWp1QmVhY2hTZWNyZXRLZXkyMDI0Rm9ySldUVG9rZW5HZW5lcmF0aW9uV2l0aExvbmdlclNlY3JldEtleUZvckJldHRlclNlY3VyaXR5}
+  expiration: ${JWT_EXPIRATION:86400000}
 
 # 로깅 설정
 logging:
   level:
-    com.project.jejubeach: DEBUG
-    org.springframework.web: DEBUG
-    org.springframework.web.client: DEBUG
-    org.springframework.security: DEBUG
+    com.project.jejubeach: INFO
+    org.springframework.web: WARN
+    org.springframework.web.client: WARN
+    org.springframework.security: WARN
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 
 # AI 모델 자동 실행 설정
 ai:
   model:
-    enabled: true  # AI 모델 자동 실행 활성화
-    python-path: c:/venvs/mysite/Scripts/python.exe  # Python 실행 경로 (가상환경 Python)
-    working-dir: ../beach_project  # AI 모델 스크립트가 있는 작업 디렉토리 (프로젝트 루트 기준)
-    script-path: simple_detection_windows.py  # 실행할 Python 스크립트 파일명 (Windows 환경 최적화)
+    enabled: ${AI_MODEL_ENABLED:true}
+    python-path: ${AI_MODEL_PYTHON_PATH:python}
+    working-dir: ${AI_MODEL_WORKING_DIR:classpath:python}
+    script-path: ${AI_MODEL_SCRIPT_PATH:simple_detection_linux.py}

@@ -171,7 +171,7 @@ export default {
       systemInfo: {
         pythonPath: 'python',
         workingDir: '../beach_project',
-        scriptPath: 'simple_detection_windows.py',
+        scriptPath: 'simple_detection_linux.py',
         analysisInterval: 30
       },
       statusUpdateInterval: null,

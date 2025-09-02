@@ -4,27 +4,30 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.concurrent.CompletableFuture;
 
 @Service
 @Slf4j
 public class AIModelService {
 
-    @Value("${ai.model.python-path:python}")
+    @Value("${ai.model.python-path:python3}")
     private String pythonPath;
 
-    @Value("${ai.model.script-path:simple_detection_windows.py}")
+    @Value("${ai.model.script-path:simple_detection_linux.py}")
     private String scriptPath;
 
-    @Value("${ai.model.working-dir:../beach_project}")
+    @Value("${ai.model.working-dir:classpath:python}")
     private String workingDir;
 
     @Value("${ai.model.enabled:true}")
@@ -33,6 +36,7 @@ public class AIModelService {
     private Process aiModelProcess;
     private long startTime;
     private int analysisCount = 0;
+    private Path tempWorkingDir;
 
     @EventListener(ApplicationReadyEvent.class)
     public void startAIModel() {
@@ -61,32 +65,26 @@ public class AIModelService {
 
     private void startAIModelProcess() {
         try {
-            // 작업 디렉토리 확인
-            Path workingPath = Paths.get(workingDir);
-            if (!Files.exists(workingPath)) {
-                log.error("AI 모델 작업 디렉토리를 찾을 수 없습니다: {}", workingDir);
+            // JAR 내부 리소스를 임시 디렉토리로 추출
+            tempWorkingDir = extractJarResources();
+            if (tempWorkingDir == null) {
+                log.error("JAR 내부 리소스 추출 실패");
                 return;
             }
 
+            log.info("✅ 임시 작업 디렉토리 생성 완료: {}", tempWorkingDir);
+
             // Python 스크립트 파일 확인
-            Path scriptFilePath = workingPath.resolve(scriptPath);
+            Path scriptFilePath = tempWorkingDir.resolve(scriptPath);
             if (!Files.exists(scriptFilePath)) {
                 log.error("AI 모델 스크립트를 찾을 수 없습니다: {}", scriptFilePath);
-                log.error("사용 가능한 스크립트 파일들:");
-                try {
-                    Files.list(workingPath)
-                        .filter(path -> path.toString().endsWith(".py"))
-                        .forEach(path -> log.error("   - {}", path.getFileName()));
-                } catch (IOException e) {
-                    log.error("디렉토리 목록 읽기 실패: {}", e.getMessage());
-                }
                 return;
             }
 
             log.info("✅ AI 모델 스크립트 확인 완료: {}", scriptFilePath);
 
             // 필요한 Python 패키지 자동 설치
-            installRequiredPackages(workingPath);
+            installRequiredPackages(tempWorkingDir);
 
             // 환경변수 설정
             ProcessBuilder processBuilder = new ProcessBuilder();
@@ -96,7 +94,7 @@ public class AIModelService {
             );
             
             // 작업 디렉토리 설정
-            processBuilder.directory(workingPath.toFile());
+            processBuilder.directory(tempWorkingDir.toFile());
             
             // 환경변수 설정
             processBuilder.environment().put("BACKEND_URL", "http://localhost:8080");
@@ -105,7 +103,7 @@ public class AIModelService {
             // 표준 출력과 에러를 현재 프로세스와 연결
             processBuilder.inheritIO();
             
-            log.info("🚀 AI 모델 프로세스 시작: {}", workingPath);
+            log.info("🚀 AI 모델 프로세스 시작: {}", tempWorkingDir);
             log.info("🔗 백엔드 URL: http://localhost:8080");
             log.info("⏰ 분석 간격: 30초");
             
@@ -133,6 +131,9 @@ public class AIModelService {
                             log.warn("⚠️ AI 모델이 예상치 못한 종료 코드로 종료되었습니다. (종료 코드: {})", exitCode);
                         }
                         
+                        // 임시 디렉토리 정리
+                        cleanupTempDirectory();
+                        
                     } catch (InterruptedException e) {
                         log.warn("AI 모델 프로세스 대기가 중단되었습니다.");
                         Thread.currentThread().interrupt();
@@ -150,6 +151,69 @@ public class AIModelService {
         }
     }
 
+    private Path extractJarResources() {
+        try {
+            // 임시 디렉토리 생성
+            Path tempDir = Files.createTempDirectory("jejubeach_ai_");
+            log.info("📁 임시 디렉토리 생성: {}", tempDir);
+
+            // Python 스크립트 추출
+            extractResource("python/" + scriptPath, tempDir.resolve(scriptPath));
+            
+            // requirements.txt 추출
+            extractResource("python/requirements.txt", tempDir.resolve("requirements.txt"));
+            
+            // YOLO 모델 파일 추출
+            extractResource("python/yolov8n.pt", tempDir.resolve("yolov8n.pt"));
+            
+            // 비디오 파일들 추출
+            String[] videoFiles = {"hamduck_beach.mp4", "iho_beach.mp4", "walljeonglee_beach.mp4", "test_beach.mp4"};
+            for (String videoFile : videoFiles) {
+                try {
+                    extractResource("videos/" + videoFile, tempDir.resolve(videoFile));
+                } catch (Exception e) {
+                    log.warn("비디오 파일 {} 추출 실패: {}", videoFile, e.getMessage());
+                }
+            }
+
+            return tempDir;
+            
+        } catch (Exception e) {
+            log.error("JAR 리소스 추출 중 오류 발생", e);
+            return null;
+        }
+    }
+
+    private void extractResource(String resourcePath, Path targetPath) throws IOException {
+        try (InputStream inputStream = new ClassPathResource(resourcePath).getInputStream()) {
+            Files.copy(inputStream, targetPath, StandardCopyOption.REPLACE_EXISTING);
+            log.debug("✅ 리소스 추출 완료: {} -> {}", resourcePath, targetPath);
+        } catch (IOException e) {
+            log.warn("⚠️ 리소스 추출 실패: {} - {}", resourcePath, e.getMessage());
+            throw e;
+        }
+    }
+
+    private void cleanupTempDirectory() {
+        if (tempWorkingDir != null && Files.exists(tempWorkingDir)) {
+            try {
+                // 임시 디렉토리 내 모든 파일 삭제
+                Files.walk(tempWorkingDir)
+                    .sorted((a, b) -> b.compareTo(a)) // 역순으로 정렬 (파일 먼저, 디렉토리 나중에)
+                    .forEach(path -> {
+                        try {
+                            Files.deleteIfExists(path);
+                        } catch (IOException e) {
+                            log.warn("임시 파일 삭제 실패: {}", path);
+                        }
+                    });
+                log.info("✅ 임시 디렉토리 정리 완료: {}", tempWorkingDir);
+            } catch (IOException e) {
+                log.warn("⚠️ 임시 디렉토리 정리 중 오류: {}", e.getMessage());
+            }
+        }
+    }
+
     private void installRequiredPackages(Path workingPath) {
         try {
             log.info("📦 필요한 Python 패키지 설치 확인 중...");
@@ -164,22 +228,21 @@ public class AIModelService {
             
             log.info("📋 requirements.txt 사용");
             
-            // 기본 패키지 먼저 설치 (requests)
-            log.info("🔄 기본 패키지 설치 시작: requests");
-            installBasicPackage("requests");
+            // 가상환경의 pip 사용
+            String pipPath = pythonPath.replace("python3", "pip3");
             
-            // requirements 파일로 추가 패키지 설치
+            // requirements 파일로 패키지 설치
             try {
-                log.info("🔄 추가 패키지 설치 시작: requirements.txt");
+                log.info("🔄 패키지 설치 시작: requirements.txt");
                 
                 ProcessBuilder pipBuilder = new ProcessBuilder();
                 pipBuilder.command(
-                    pythonPath, "-m", "pip", "install", "-r", "requirements.txt"
+                    pipPath, "install", "-r", "requirements.txt"
                 );
                 pipBuilder.directory(workingPath.toFile());
                 
                 Process pipProcess = pipBuilder.start();
-                boolean completed = pipProcess.waitFor(2, java.util.concurrent.TimeUnit.MINUTES);
+                boolean completed = pipProcess.waitFor(3, java.util.concurrent.TimeUnit.MINUTES);
                 
                 if (completed && pipProcess.exitValue() == 0) {
                     log.info("✅ Python 패키지 설치가 완료되었습니다.");
@@ -189,7 +252,7 @@ public class AIModelService {
                 }
                 
             } catch (Exception e) {
-                log.warn("⚠️ 추가 패키지 설치 중 오류 발생: {}", e.getMessage());
+                log.warn("⚠️ 패키지 설치 중 오류 발생: {}", e.getMessage());
             }
             
         } catch (Exception e) {
@@ -261,6 +324,9 @@ public class AIModelService {
                 }
                 
                 log.info("✅ AI 모델 프로세스가 종료되었습니다.");
+                
+                // 임시 디렉토리 정리
+                cleanupTempDirectory();
                 
             } catch (InterruptedException e) {
                 log.warn("AI 모델 프로세스 종료 대기 중 중단됨");

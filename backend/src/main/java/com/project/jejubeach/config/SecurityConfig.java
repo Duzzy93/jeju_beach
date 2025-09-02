@@ -38,6 +38,9 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
+                // 정적 리소스 (프론트엔드 파일들) - 최우선 허용
+                .requestMatchers("/assets/**", "/favicon.ico", "/manifest.json", "/robots.txt", "/static/**", "/css/**", "/js/**", "/images/**").permitAll()
+                
                 // Swagger UI 및 OpenAPI 관련 경로 허용
                 .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/api-docs/**", "/v3/api-docs/**").permitAll()
                 
@@ -45,7 +48,10 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 
                 // 홈페이지 및 정적 리소스 (비로그인 사용자도 접근 가능)
-                .requestMatchers("/", "/index.html", "/static/**", "/public/**").permitAll()
+                .requestMatchers("/", "/index.html", "/public/**").permitAll()
+                
+                // Vue.js SPA 라우트들 (비로그인 사용자도 접근 가능)
+                .requestMatchers("/login", "/home", "/beach-management", "/beach-detail/**", "/beach-crowd", "/beach-crowd/**", "/chatbot", "/admin", "/ai-model-status").permitAll()
                 
                 // 챗봇 API (비로그인 사용자도 접근 가능)
                 .requestMatchers("/api/chatbot/**").permitAll()

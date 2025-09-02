@@ -1,7 +1,9 @@
 import axios from 'axios'
 
-// API 기본 설정
-const API_BASE_URL = 'http://localhost:8080/api'
+// API 기본 설정 - 환경 변수 또는 기본값 사용
+const API_BASE_URL = process.env.NODE_ENV === 'production' 
+  ? (process.env.VUE_APP_API_URL || 'http://15.165.30.16:8080/api')  // 환경 변수 또는 기본값
+  : 'http://localhost:8080/api'  // 개발 환경에서는 localhost 사용
 
 // axios 인스턴스 생성
 const apiClient = axios.create({

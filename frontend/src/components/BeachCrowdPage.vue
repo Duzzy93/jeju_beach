@@ -231,7 +231,9 @@ export default {
     
     connectWebSocket() {
       try {
-        const socket = new SockJS('http://localhost:8080/ws');
+        const socket = new SockJS(process.env.NODE_ENV === 'production' 
+          ? 'http://15.165.30.16:8080/ws' 
+          : 'http://localhost:8080/ws');
         this.stompClient = Stomp.over(socket);
         
         this.stompClient.connect({}, (frame) => {
@@ -353,7 +355,11 @@ export default {
           return;
         }
 
-                 const response = await fetch('http://localhost:8080/api/detections/latest', {
+        const apiUrl = process.env.NODE_ENV === 'production' 
+          ? 'http://15.165.30.16:8080/api/detections/latest'
+          : 'http://localhost:8080/api/detections/latest';
+          
+        const response = await fetch(apiUrl, {
           headers: {
             'Authorization': `Bearer ${token}`
           }

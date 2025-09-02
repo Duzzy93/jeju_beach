@@ -42,6 +42,7 @@ public class Beach {
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @Builder.Default
     private BeachStatus status = BeachStatus.ACTIVE;
     
     @ManyToOne(fetch = FetchType.EAGER)

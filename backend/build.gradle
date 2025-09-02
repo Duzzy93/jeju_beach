@@ -49,3 +49,37 @@ dependencies {
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+// 프론트엔드 빌드 통합
+task buildFrontend(type: Exec) {
+    workingDir '../frontend'
+    commandLine 'npm', 'run', 'build'
+}
+
+task copyFrontend(type: Copy) {
+    dependsOn buildFrontend
+    from '../frontend/dist'
+    into 'src/main/resources/static'
+}
+
+// Python 스크립트 및 비디오 파일 복사
+task copyPythonResources(type: Copy) {
+    from '../beach_project'
+    include 'simple_detection_linux.py'
+    include 'requirements.txt'
+    include 'yolov8n.pt'
+    into 'src/main/resources/python'
+}
+
+task copyVideoResources(type: Copy) {
+    from '../backend/videos'
+    include '*.mp4'
+    into 'src/main/resources/videos'
+}
+
+// 태스크 의존성 설정
+processResources.dependsOn copyFrontend, copyPythonResources, copyVideoResources
+
+bootJar {
+    dependsOn copyFrontend, copyPythonResources, copyVideoResources
+}

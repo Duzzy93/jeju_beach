@@ -1,0 +1,70 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: jeju-beach-backend
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/jeju_beach_db?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8}
+    username: ${SPRING_DATASOURCE_USERNAME:root}
+    password: ${SPRING_DATASOURCE_PASSWORD:12345}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: false
+  web:
+    resources:
+      static-locations: classpath:/static/,classpath:/videos/,classpath:/python/
+      add-mappings: true
+      chain:
+        strategy:
+          content:
+            enabled: true
+            paths: /**
+  mvc:
+    static-path-pattern: /videos/**
+
+# OpenAPI (Swagger) 설정
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+    doc-expansion: none
+    disable-swagger-default-url: true
+  packages-to-scan: com.project.jejubeach.controller
+
+# OpenAI API 설정
+openai:
+  api:
+    url: https://api.openai.com/v1/chat/completions
+
+# JWT 설정
+jwt:
+  secret: ${JWT_SECRET:ZWp1QmVhY2hTZWNyZXRLZXkyMDI0Rm9ySldUVG9rZW5HZW5lcmF0aW9uV2l0aExvbmdlclNlY3JldEtleUZvckJldHRlclNlY3VyaXR5}
+  expiration: ${JWT_EXPIRATION:86400000}
+
+# 로깅 설정
+logging:
+  level:
+    com.project.jejubeach: INFO
+    org.springframework.web: WARN
+    org.springframework.web.client: WARN
+    org.springframework.security: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# AI 모델 자동 실행 설정
+ai:
+  model:
+    enabled: ${AI_MODEL_ENABLED:true}
+    python-path: ${AI_MODEL_PYTHON_PATH:python}
+    working-dir: ${AI_MODEL_WORKING_DIR:classpath:python}
+    script-path: ${AI_MODEL_SCRIPT_PATH:simple_detection_linux.py}

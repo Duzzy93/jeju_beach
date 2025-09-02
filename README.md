@@ -107,16 +107,18 @@ jeju_beach/
 │   ├── package.json                  # npm 의존성
 │   └── vite.config.js                # Vite 설정
 ├── beach_project/                    # Python AI 모델
-│   ├── simple_detection_windows.py   # Windows용 탐지 스크립트
+│   ├── simple_detection_linux.py     # Linux용 탐지 스크립트
 │   ├── requirements.txt              # Python 의존성
 │   ├── yolov8n.pt                    # YOLOv8 모델 파일
 │   └── README.md                     # AI 모델 문서
+├── deploy/                           # 배포 관련 파일
+│   ├── jejubeach.service             # systemd 서비스 파일
+│   └── deploy_to_server.sh          # 서버 배포 스크립트
 ├── initial_data.sql                  # 초기 데이터베이스 데이터
-├── start_backend_with_ai.bat         # Windows 시작 스크립트
-├── start_backend_with_ai.sh          # Linux/Mac 시작 스크립트
-├── SETUP_GUIDE.md                    # 상세 설정 가이드
-├── 프로젝트_발표자료.md                # 프로젝트 발표 자료
-└── README.md                         # 프로젝트 문서
+├── env.prod                          # 프로덕션 환경 변수
+├── deploy.sh                         # 배포 패키지 생성 스크립트
+├── setup_server.sh                   # 서버 환경 설정 스크립트
+└── README.md                         # 프로젝트 문서 (현재 파일)
 ```
 
 ## 🛠️ 기술 스택
@@ -261,13 +263,78 @@ ai:
     enabled: true
     python-path: python
     working-dir: ../beach_project
-    script-path: simple_detection_windows.py
+    script-path: simple_detection_linux.py
 ```
 
 ### 환경 변수
 ```bash
 # .env 파일 (backend 디렉토리에 생성)
 OPENAI_API_KEY=your_openai_api_key_here
+```
+
+## �� 배포 가이드
+
+### 로컬 개발 환경
+
+#### Windows
+```bash
+# 백엔드 + AI 모델 자동 실행
+start_backend_with_ai.bat
+
+# 또는 수동 실행
+cd backend
+gradlew bootRun
+```
+
+#### Linux/Mac
+```bash
+# 백엔드 + AI 모델 자동 실행
+chmod +x start_backend_with_ai.sh
+./start_backend_with_ai.sh
+
+# 또는 수동 실행
+cd backend
+./gradlew bootRun
+```
+
+### AWS EC2 배포
+
+#### 1. 서버 환경 설정
+```bash
+# 서버에 접속 후 실행
+chmod +x setup_server.sh
+./setup_server.sh
+```
+
+#### 2. 배포 패키지 생성
+```bash
+# 로컬에서 실행
+chmod +x deploy.sh
+./deploy.sh
+```
+
+#### 3. 서버에 배포
+```bash
+# 파일 업로드
+scp -r deploy/* ubuntu@your-server-ip:/tmp/
+
+# 서버에서 배포 실행
+ssh ubuntu@your-server-ip
+cd /tmp
+chmod +x deploy_to_server.sh
+./deploy_to_server.sh
+```
+
+#### 4. 서비스 시작
+```bash
+# 서비스 시작
+sudo systemctl start jejubeach.service
+
+# 상태 확인
+sudo systemctl status jejubeach.service
+
+# 로그 확인
+sudo journalctl -u jejubeach.service -f
 ```
 
 ## 📊 모니터링
@@ -291,6 +358,21 @@ OPENAI_API_KEY=your_openai_api_key_here
 2. **데이터베이스 연결 오류**: MySQL 서비스 상태 및 설정 확인
 3. **AI 모델 실행 오류**: Python 경로 및 스크립트 파일 확인
 4. **JWT 토큰 오류**: 시크릿 키 설정 및 토큰 만료 시간 확인
+
+### CPU 과부하 문제
+AI 모델이 CPU를 과도하게 사용하는 경우:
+
+1. **즉시 해결**: AI 모델 비활성화
+   ```bash
+   # .env 파일에서
+   AI_MODEL_ENABLED=false
+   ```
+
+2. **장기 해결**: AI 모델 최적화
+   ```bash
+   # 분석 간격 증가
+   AI_MODEL_ANALYSIS_INTERVAL=60
+   ```
 
 ### 로그 확인
 - 백엔드: 콘솔 출력 및 로그 파일

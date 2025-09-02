@@ -233,7 +233,7 @@ export default {
       try {
         // API에서 해변 정보 가져오기 (더 정확한 검색)
         console.log('해변 검색 시작:', beachName);
-        const response = await fetch(`http://localhost:8080/api/beaches/search?name=${encodeURIComponent(beachName)}`);
+        const response = await fetch(`${process.env.NODE_ENV === 'production' ? 'http://15.165.30.16:8080' : 'http://localhost:8080'}/api/beaches/search?name=${encodeURIComponent(beachName)}`);
         console.log('검색 API 응답 상태:', response.status);
         
         if (response.ok) {
@@ -250,10 +250,10 @@ export default {
             
             // 동영상 경로 설정
             if (this.beachData.videoPath) {
-              this.videoSource = `http://localhost:8080${this.beachData.videoPath}`;
+              this.videoSource = `${process.env.NODE_ENV === 'production' ? 'http://15.165.30.16:8080' : 'http://localhost:8080'}${this.beachData.videoPath}`;
             } else {
               // 동영상 경로가 없는 경우 기본 경로 사용
-              this.videoSource = `http://localhost:8080/videos/${beachName}_beach.mp4`;
+              this.videoSource = `${process.env.NODE_ENV === 'production' ? 'http://15.165.30.16:8080' : 'http://localhost:8080'}/videos/${beachName}_beach.mp4`;
             }
             
             console.log('해변 정보 로드 성공:', this.beachData);
@@ -290,7 +290,7 @@ export default {
     async fetchAllBeachesAsFallback(beachName) {
       try {
         console.log('fallback: 모든 해변 정보를 가져오는 중...');
-        const fallbackResponse = await fetch('http://localhost:8080/api/beaches');
+        const fallbackResponse = await fetch(`${process.env.NODE_ENV === 'production' ? 'http://15.165.30.16:8080' : 'http://localhost:8080'}/api/beaches`);
         
         if (fallbackResponse.ok) {
           const allBeaches = await fallbackResponse.json();
@@ -311,9 +311,9 @@ export default {
             this.beachLocation = foundBeach.region || '위치 정보가 없습니다.';
             
             if (foundBeach.videoPath) {
-              this.videoSource = `http://localhost:8080${foundBeach.videoPath}`;
+              this.videoSource = `${process.env.NODE_ENV === 'production' ? 'http://15.165.30.16:8080' : 'http://localhost:8080'}${foundBeach.videoPath}`;
             } else {
-              this.videoSource = `http://localhost:8080/videos/${beachName}_beach.mp4`;
+              this.videoSource = `${process.env.NODE_ENV === 'production' ? 'http://15.165.30.16:8080' : 'http://localhost:8080'}/videos/${beachName}_beach.mp4`;
             }
           } else {
             console.log('fallback: 해변을 찾을 수 없어 기본 정보를 사용합니다.');
@@ -347,7 +347,7 @@ export default {
       this.beachDisplayName = '해변 정보 없음';
       this.beachDescription = '해변 정보를 찾을 수 없습니다.';
       this.beachLocation = '위치 정보 없음';
-      this.videoSource = `http://localhost:8080/videos/${beachName}_beach.mp4`;
+      this.videoSource = `${process.env.NODE_ENV === 'production' ? 'http://15.165.30.16:8080' : 'http://localhost:8080'}/videos/${beachName}_beach.mp4`;
       
       // 사용자에게 알림
       this.$nextTick(() => {
@@ -362,7 +362,7 @@ export default {
       this.beachDisplayName = '오류 발생';
       this.beachDescription = '해변 정보를 불러오는 중 오류가 발생했습니다.';
       this.beachLocation = '오류';
-      this.videoSource = `http://localhost:8080/videos/${beachName}_beach.mp4`;
+      this.videoSource = `${process.env.NODE_ENV === 'production' ? 'http://15.165.30.16:8080' : 'http://localhost:8080'}/videos/${beachName}_beach.mp4`;
       
       // 사용자에게 알림
       this.$nextTick(() => {
@@ -393,7 +393,9 @@ export default {
     connectWebSocket() {
       try {
         // WebSocket 연결 (백엔드에서 WebSocket 지원 시)
-        const socket = new WebSocket('ws://localhost:8080/ws/detections');
+        const socket = new WebSocket(process.env.NODE_ENV === 'production' 
+          ? 'ws://15.165.30.16:8080/ws/detections' 
+          : 'ws://localhost:8080/ws/detections');
         
         socket.onopen = () => {
           console.log('WebSocket 연결 성공');
@@ -443,7 +445,7 @@ export default {
 
         // 현재 해변의 최신 탐지 데이터 조회
         const beachName = this.beachName;
-        const response = await fetch(`http://localhost:8080/api/detections/beach/${beachName}/latest`, {
+        const response = await fetch(`${process.env.NODE_ENV === 'production' ? 'http://15.165.30.16:8080' : 'http://localhost:8080'}/api/detections/beach/${beachName}/latest`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -570,7 +572,7 @@ export default {
 
     async checkManagerBeachAccess() {
       try {
-        const response = await fetch('http://localhost:8080/api/beaches/my-beaches', {
+        const response = await fetch(`${process.env.NODE_ENV === 'production' ? 'http://15.165.30.16:8080' : 'http://localhost:8080'}/api/beaches/my-beaches`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }

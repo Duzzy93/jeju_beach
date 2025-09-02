@@ -32,6 +32,7 @@ public class BeachManager {
     private LocalDateTime assignedAt;
     
     @Column(name = "is_active", nullable = false)
+    @Builder.Default
     private Boolean isActive = true;
     
     @PrePersist
